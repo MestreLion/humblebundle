@@ -93,24 +93,21 @@ class HumbleBundle(httpbot.HttpBot):
         self.bundles = {}  # "purchases" in website. May not be technically a bundle, like Store Purchases
         self.games   = {}  # "subproducts" in json. May not be a game, like Soundtracks and eBooks
 
-        self._load_data()
+        try:
+            with open(osp.join(configdir, "bundles.json")) as fp1:
+                with open(osp.join(configdir, "games.json")) as fp2:
+                    self.bundles = json.load(fp1)
+                    self.games   = json.load(fp2)
+                    log.info("Loaded %d games from %d bundles" % (len(self.games), len(self.bundles)))
+                    return
+        except IOError:
+            self.update()
 
 
-    def _load_data(self, cache=True):
-        ''' Populate bundles and games '''
+    def update(self):
+        ''' Fetch all bundles and games from the server, rebuilding the cache '''
         self.bundles = {}
         self.games   = {}
-
-        if cache:
-            try:
-                with open(osp.join(configdir, "bundles.json")) as fp1:
-                    with open(osp.join(configdir, "games.json")) as fp2:
-                        self.bundles = json.load(fp1)
-                        self.games   = json.load(fp2)
-                        log.info("Loaded %d games from %d bundles" % (len(self.games), len(self.bundles)))
-                        return
-            except IOError:
-                pass
 
         # Get the keys
         log.info("Retrieving keys from '%s/home'", self.url)
@@ -123,7 +120,7 @@ class HumbleBundle(httpbot.HttpBot):
         for key in json.loads(match.groups()[0]):
             self._load_key(key, save=False)
 
-        log.info("Loaded %d games from %d bundles" % (len(self.games), len(self.bundles)))
+        log.info("Updated %d games from %d bundles" % (len(self.games), len(self.bundles)))
         self._save_data()
 
 
@@ -282,7 +279,7 @@ class HumbleBundle(httpbot.HttpBot):
         if not game:
             if retry:
                 log.warn("Game '%s' not found. Rebuilding cache", name)
-                self._load_data(cache=False)
+                self.update()
                 return self._get_game_info(name, retry=False)
             else:
                 raise HumbleBundleError("Game not found: %s" % name)
@@ -357,6 +354,9 @@ def main(args):
     auth     = args.auth                           or HB_AUTH
 
     hb = HumbleBundle(username, password, auth, debug=args.debug)
+
+    if args.update:
+        hb.update()
 
     if args.list:
         for game in sorted(hb.games.items()):
@@ -456,6 +456,9 @@ def parseargs(args=None):
 
     parser.add_argument('--path', '-f', dest='path',
                         help="Path to download. If directory, default download basename will be used")
+
+    parser.add_argument('--update', '-u', dest='update', default=False, action="store_true",
+                        help="Fetch all games and bundles data from the server, rebuilding the cache")
 
     parser.add_argument('--list', '-l', dest='list', default=False, action="store_true",
                         help="List all available Games (Products), including Soundtracks and eBooks")
