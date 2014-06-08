@@ -104,13 +104,13 @@ class HumbleBundle(httpbot.HttpBot):
         self.games   = {}
 
         def expire_timestamp(bundle):
-            url = (((bundle.get('subproducts'    , '') or [{}])[0].\
-                            get('downloads'      , '') or [{}])[0].\
-                            get('download_struct', '') or [{}])[0].\
-                            get('url', {}).\
-                            get('web', '')
-            ttl = parse_qs(urlsplit(url).query).get('ttl', [0])[0]
-            return int(ttl) or int(time.time()) + 24 * 60 * 60
+            try:
+                url = bundle['subproducts'][0]['downloads'][0]['download_struct'][0]['url']['web']
+                ttl = parse_qs(urlsplit(url).query)['ttl'][0]
+            except (KeyError, IndexError):
+                ttl = time.time() + 24 * 60 * 60
+
+            return int(ttl)
 
         if cache:
             try:
@@ -158,16 +158,6 @@ class HumbleBundle(httpbot.HttpBot):
                 game['expires'] = expires
                 self.games[gamekey] = game
 
-                # # New game or duplicate in another bundle?
-                # if self.games.has_key(gamekey):
-                #     # Duplicate: add bundle name to game's bundle list
-                #     self.games[gamekey]['bundles'].append(bundlekey)
-                # else:
-                #     # New game: add custom fields and insert game in games dict (overwriting)
-                #     game['bundle'] = bundlekey  # made-up field: list of bundle it belongs
-                #     game['expires'] = expires
-                #     self.games[gamekey] = game
-
             # remove the now redundant "subproducts" list, and the useless "subscriptions"
             del bundle['subproducts']
             del bundle['subscriptions']
@@ -189,9 +179,8 @@ class HumbleBundle(httpbot.HttpBot):
                 json.dump(getattr(self, obj), f, indent=2, separators=(',', ': '), sort_keys=True)
 
 
-    def download(self, name, path=None, type=None, arch=None, bittorrent=False,
-                 platform="linux", type_pref=".deb", arch_pref="64"):
-        # FIXME: bogus default values always overwritten by main's call (args=None)
+    def download(self, name, path=None, type=None, arch=None, platform=None, bittorrent=False,
+                 type_pref=".deb", arch_pref="64"):
 
         def download_info(d):
             a = "\t(%s-bit)" % d['arch'] if d.get('arch', None) else ""
@@ -313,45 +302,40 @@ class HumbleBundle(httpbot.HttpBot):
                 pass
 
         log.info("Retrieving keys from %s/home", self.url)
-        res = self.get('/home')
-        if res:
-            home = res.read()
-        else:
-            home = ""
+        home = self.get('/home').read()
 
         match = re.search(r'^\s*new window.Gamelist\s*\(.*,\s*gamekeys\s*:\s*(\[.*\])',
                           home, re.MULTILINE)
-        if match:
-            keys = json.loads(match.groups()[0])
-            log.info("%d purchase orders found" % len(keys))
-            log.debug("Writing keys cache file '%s'", keyfile)
-            with open(keyfile, 'w') as fp:
-                json.dump(keys, fp, indent=0, separators=(',', ': '))
-            os.chmod(keyfile, 0600)
-            return keys
+        if not match:
+            raise HumbleBundleError("GameKeys list not found")
 
-        log.warn("Key list not found in website")
-        return []
+        keys = json.loads(match.groups()[0])
+        log.info("%d purchase orders found" % len(keys))
+        log.debug("Writing keys cache file '%s'", keyfile)
+        with open(keyfile, 'w') as fp:
+            json.dump(keys, fp, indent=0, separators=(',', ': '))
+        os.chmod(keyfile, 0600)
 
-
-    def _urlabspath(self, url):
-        return urlsplit(urljoin('/', url)).path.lower()
-
-
-    def _save_cookies(self, url, res):
-        if (self._urlabspath(url) == "/login" or
-            res.info().has_key('Set-Cookie')):
-            self.cookiejar.save()
-            os.chmod(self.cookiejar.filename, 0600)
+        return keys
 
 
     def get(self, url, postdata=None):
+
+        def urlabspath(url):
+            return urlsplit(urljoin('/', url)).path.lower()
+
+        def save_cookies(url, res):
+            if (urlabspath(url) == "/login" or
+                res.info().has_key('Set-Cookie')):
+                self.cookiejar.save()
+                os.chmod(self.cookiejar.filename, 0600)
+
         try:
             res = super(HumbleBundle, self).get(url, postdata)
-            self._save_cookies(url, res)
+            save_cookies(url, res)
             # Was it successful? (intended to be /login or not redirected to /login)
-            if (    self._urlabspath(       url  ) == "/login" or
-                not self._urlabspath(res.geturl()) == '/login'):
+            if (    urlabspath(       url  ) == "/login" or
+                not urlabspath(res.geturl()) == '/login'):
                 return res
         except httpbot.urllib2.HTTPError as e:
             # Unauthorized (requires login) or something else?
@@ -361,27 +345,25 @@ class HumbleBundle(httpbot.HttpBot):
         log.info("Authentication required.")
 
         if not (self.username and self.password):
-            log.error("Username or password are blank. "
-                      "Set with --username and --password and try again")
-            return None #FIXME: raise instead of return perhaps?
+            raise HumbleBundleError(
+                "Username or password are blank. "
+                "Set with --username and --password and try again")
 
         res = super(HumbleBundle, self).get("/login",
                                             {'goto'    : url,
                                              'username': self.username,
                                              'password': self.password})
-        self._save_cookies("/login", res)
+        save_cookies("/login", res)
 
-        # Was it successfully redirected from /login to the page requested?
-        if self._urlabspath(res.url) == self._urlabspath(url):
+        # Was it successfully redirected to the page requested?
+        if urlabspath(res.geturl()) == urlabspath(url):
             return res
 
-        log.error("Could not log in. Either username/password are not correct, "
-                  "or a ReCaptcha validation is required. "
-                  "Log in using a real browser, inspect the cookies created "
-                  "and provide the value of _simpleauth_sess with --auth")
-
-        #FIXME: another raise here perhaps?
-        return None
+        raise HumbleBundleError(
+            "Could not log in. Either username/password are not correct, "
+            "or a ReCaptcha validation is required. "
+            "Log in using a real browser, inspect the cookies created "
+            "and provide the value of _simpleauth_sess with --auth")
 
 
 
@@ -485,23 +467,27 @@ def parseargs(args=None):
     parser.add_argument('--arch', '-a', dest='arch', choices=['32', '64'],
                         help="Download architecture: '32' or '64'")
 
-    parser.add_argument('--platform', '-p', dest='platform', default="linux",
-                        choices=['windows', 'mac', 'linux', 'android', 'audio'],
+    parser.add_argument('--platform', '-p', dest='platform',
+                        default="linux", choices=['windows', 'mac', 'linux', 'android', 'audio'],
                         help="Download platform")
 
     parser.add_argument('--bittorrent', '-b', dest='bittorrent', default=False, action="store_true",
                         help="Download via bittorrent")
 
     parser.add_argument('--path', '-f', dest='path',
-                        help="Path to download. If directory, default basename will be used")
+                        help="Path to download. If directory, default download basename will be used")
 
     parser.add_argument('--list', '-l', dest='list', default=False, action="store_true",
-                        help="List all available Games (Products). This includes Soundtracks and eBooks")
+                        help="List all available Games (Products), including Soundtracks and eBooks")
 
     parser.add_argument('--list-bundles', '-L', dest='list_bundles', default=False, action="store_true",
-                        help="List all available Bundles (Purchases). This includes Store Front (single-product) Puchases")
+                        help="List all available Bundles (Purchases), "
+                            "including Store Front (single product) purchases")
 
     return parser.parse_args(args)
+
+
+
 
 if __name__ == '__main__':
     myname = osp.basename(osp.splitext(__file__)[0])
