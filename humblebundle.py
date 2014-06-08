@@ -112,9 +112,15 @@ class HumbleBundle(httpbot.HttpBot):
             except IOError:
                 pass
 
+        # Get the keys
+        log.info("Retrieving keys from '%s/home'", self.url)
+        match = re.search(r'^\s*new window.Gamelist\s*\(.*,\s*gamekeys\s*:\s*(\[.*\])',
+                          self.get('/home').read(), re.MULTILINE)
+        if not match:
+            raise HumbleBundleError("GameKeys list not found")
+
         # Loop the bundles
-        keys = self._get_keys(cache=cache)
-        for key in keys:
+        for key in json.loads(match.groups()[0]):
             self._load_key(key, save=False)
 
         log.info("Loaded %d games from %d bundles" % (len(self.games), len(self.bundles)))
@@ -122,20 +128,25 @@ class HumbleBundle(httpbot.HttpBot):
 
 
     def _save_data(self):
-        # Save'm all
         for obj in ['bundles', 'games']:
-            with open(osp.join(configdir, "%s.json" % obj), 'w') as f:
-                json.dump(getattr(self, obj), f, indent=2, separators=(',', ': '), sort_keys=True)
+            path = osp.join(configdir, "%s.json" % obj)
+            try:
+                with open(path, 'w') as f:
+                    json.dump(getattr(self, obj), f,
+                              indent=2, separators=(',', ': '), sort_keys=True)
+                os.chmod(path, 0600)
+            except IOError as e:
+                log.error("Error saving cache data: %s", e)
 
 
     def _load_key(self, key, save=True):
+
         def expire_timestamp(bundle):
             try:
                 url = bundle['subproducts'][0]['downloads'][0]['download_struct'][0]['url']['web']
                 ttl = parse_qs(urlsplit(url).query)['ttl'][0]
             except (KeyError, IndexError):
                 ttl = time.time() + 24 * 60 * 60
-
             return int(ttl)
 
         url = "/api/v1/order/%s" % key
@@ -176,8 +187,8 @@ class HumbleBundle(httpbot.HttpBot):
             self._save_data()
 
 
-    def download(self, name, path=None, type=None, arch=None, platform=None, bittorrent=False,
-                 type_pref=".deb", arch_pref="64"):
+    def download(self, name, path=None, type=None, arch=None, platform=None,
+                 bittorrent=False, type_pref=".deb", arch_pref="64"):
 
         def download_info(d):
             a = "\t(%s-bit)" % d['arch'] if d.get('arch', None) else ""
@@ -285,20 +296,6 @@ class HumbleBundle(httpbot.HttpBot):
         return game
 
 
-    def _get_keys(self, cache=True):
-        log.info("Retrieving keys from %s/home", self.url)
-        home = self.get('/home').read()
-
-        match = re.search(r'^\s*new window.Gamelist\s*\(.*,\s*gamekeys\s*:\s*(\[.*\])',
-                          home, re.MULTILINE)
-        if not match:
-            raise HumbleBundleError("GameKeys list not found")
-
-        keys = json.loads(match.groups()[0])
-
-        return keys
-
-
     def get(self, url, postdata=None):
 
         def urlabspath(url):
@@ -307,8 +304,12 @@ class HumbleBundle(httpbot.HttpBot):
         def save_cookies(url, res):
             if (urlabspath(url) == "/login" or
                 res.info().has_key('Set-Cookie')):
-                self.cookiejar.save()
-                os.chmod(self.cookiejar.filename, 0600)
+                log.debug("Saving cookies to '%s'", self.cookiejar.filename)
+                try:
+                    self.cookiejar.save()
+                    os.chmod(self.cookiejar.filename, 0600)
+                except IOError as e:
+                    log.error("Error saving cookies: %s", e)
 
         try:
             res = super(HumbleBundle, self).get(url, postdata)
@@ -322,13 +323,12 @@ class HumbleBundle(httpbot.HttpBot):
             if not e.code == 401:
                 raise
 
-        log.info("Authentication required.")
-
         if not (self.username and self.password):
             raise HumbleBundleError(
                 "Username or password are blank. "
                 "Set with --username and --password and try again")
 
+        log.info("Authenticating at '%s/login'", self.url)
         res = super(HumbleBundle, self).get("/login",
                                             {'goto'    : url,
                                              'username': self.username,
@@ -472,15 +472,8 @@ def parseargs(args=None):
 if __name__ == '__main__':
     myname = osp.basename(osp.splitext(__file__)[0])
     configdir = xdg.save_config_path(myname)
-    try:
-        os.makedirs(osp.join(configdir, "purchases"), 0700)
-    except OSError as e:
-        if e.errno != 17:  # File exists
-            raise
-
     args = parseargs()
     args.debug = args.loglevel=='debug'
-
     logging.basicConfig(level=getattr(logging, args.loglevel.upper(), None),
                         format='%(asctime)s\t%(levelname)-8s\t%(message)s')
 
@@ -488,7 +481,7 @@ if __name__ == '__main__':
         sys.exit(0 if main(args) else 1)
 
     except HumbleBundleError as e:
-        log.error(e)
+        log.critical(e)
     except Exception as e:
         log.critical(e, exc_info=True)
         sys.exit(1)

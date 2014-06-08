@@ -65,8 +65,11 @@ class HttpBot(object):
 
         # Handle dir
         dirname, _ = os.path.split(path)
-        if not os.path.isdir(dirname):
+        try:
             os.makedirs(dirname)
+        except OSError as e:
+            if e.errno != 17:  # File exists
+                raise
 
         with open(path,'wb') as f:
             f.write(download.read())
