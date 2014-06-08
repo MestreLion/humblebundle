@@ -33,6 +33,8 @@ import xdg.BaseDirectory as xdg
 import time
 import cookielib
 from urlparse import urljoin, urlsplit, parse_qs
+import Queue
+import threading
 
 try:
     import keyring
@@ -117,8 +119,17 @@ class HumbleBundle(httpbot.HttpBot):
             raise HumbleBundleError("GameKeys list not found")
 
         # Loop the bundles
-        for key in json.loads(match.groups()[0]):
-            self._load_key(key, save=False)
+        queue = Queue.Queue()
+        keys = json.loads(match.groups()[0])
+        for key in keys:
+            t = threading.Thread(target=self._load_key, args=(key, True, queue))
+            t.daemon = True
+            t.start()
+
+        for _ in xrange(len(keys)):
+            bundle, games = queue.get()
+            self.bundles.update(bundle)
+            self.games.update(games)
 
         log.info("Updated %d games from %d bundles" % (len(self.games), len(self.bundles)))
         self._save_data()
@@ -136,7 +147,7 @@ class HumbleBundle(httpbot.HttpBot):
                 log.error("Error saving cache data: %s", e)
 
 
-    def _load_key(self, key, save=True):
+    def _load_key(self, key, batch=False, queue=None):
 
         def expire_timestamp(bundle):
             try:
@@ -147,13 +158,14 @@ class HumbleBundle(httpbot.HttpBot):
             return int(ttl)
 
         url = "/api/v1/order/%s" % key
-        log.debug("Retrieving purchase info from '%s%s'", self.url, url)
+        log.info("Retrieving purchase info from '%s%s'", self.url, url)
         bundle = json.load(self.get(url))
         bundle['games'] = []  # made-up field: list of games it contains
         bundlekey = bundle['product']['machine_name']
         expires = expire_timestamp(bundle)
 
         # Loop each game in the bundle
+        games = {}
         for game in bundle['subproducts']:
             gamekey = game['machine_name']
 
@@ -163,7 +175,7 @@ class HumbleBundle(httpbot.HttpBot):
             # Add custom fields and insert game in games dict (overwriting)
             game['bundle'] = bundlekey  # made-up field: bundle it was retrieved from
             game['expires'] = expires
-            self.games[gamekey] = game
+            games[gamekey] = game
 
         # remove the now redundant "subproducts" list, and the useless "subscriptions"
         del bundle['subproducts']
@@ -177,11 +189,19 @@ class HumbleBundle(httpbot.HttpBot):
         # Sort games list
         bundle['games'].sort()
 
-        # Add bundle to bundles list
-        self.bundles[bundlekey] = bundle
+        # Batch-processing: do not update nor save bundles and games dict
+        if batch:
+            out = ({bundlekey:bundle}, games)
+            if queue:
+                queue.put(out)
+                return
+            else:
+                return out
 
-        if save:
-            self._save_data()
+        # Add bundle to bundles list
+        self.games.update(games)
+        self.bundles[bundlekey] = bundle
+        self._save_data()
 
 
     def download(self, name, path=None, type=None, arch=None, platform=None,
