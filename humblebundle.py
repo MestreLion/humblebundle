@@ -124,63 +124,63 @@ class HumbleBundle(httpbot.HttpBot):
 
 
     def _load_key(self, key):
-            def expire_timestamp(bundle):
-                try:
-                    url = bundle['subproducts'][0]['downloads'][0]['download_struct'][0]['url']['web']
-                    ttl = parse_qs(urlsplit(url).query)['ttl'][0]
-                except (KeyError, IndexError):
-                    ttl = time.time() + 24 * 60 * 60
-
-                return int(ttl)
-
-            log.debug("Retrieving purchase '%s'", key)
-            keyfile = osp.join(configdir, "purchases", "%s.json" % key)
+        def expire_timestamp(bundle):
             try:
-                with open(keyfile) as fp:
-                    j = fp.read()
-            except IOError:
-                url = "/api/v1/order/%s" % key
-                log.debug("Retrieving from %s%s", self.url, url)
-                res = self.get(url)
-                if res:
-                    j = res.read()
-                    with open(keyfile, 'w') as fp:
-                        fp.write(j)
-                else:
-                    log.error("Could not retrieve key '%s', skipping..." % key)
-                    continue
+                url = bundle['subproducts'][0]['downloads'][0]['download_struct'][0]['url']['web']
+                ttl = parse_qs(urlsplit(url).query)['ttl'][0]
+            except (KeyError, IndexError):
+                ttl = time.time() + 24 * 60 * 60
 
-            bundle = json.loads(j)
-            bundle['games'] = []  # made-up field: list of games it contains
-            bundlekey = bundle['product']['machine_name']
-            expires = expire_timestamp(bundle)
+            return int(ttl)
 
-            # Loop each game in the bundle
-            for game in bundle['subproducts']:
-                gamekey = game['machine_name']
+        log.debug("Retrieving purchase '%s'", key)
+        keyfile = osp.join(configdir, "purchases", "%s.json" % key)
+        try:
+            with open(keyfile) as fp:
+                j = fp.read()
+        except IOError:
+            url = "/api/v1/order/%s" % key
+            log.debug("Retrieving from %s%s", self.url, url)
+            res = self.get(url)
+            if res:
+                j = res.read()
+                with open(keyfile, 'w') as fp:
+                    fp.write(j)
+            else:
+                log.error("Could not retrieve key '%s', skipping..." % key)
+                continue
 
-                # Add game name to its bundle game list
-                bundle['games'].append(gamekey)
+        bundle = json.loads(j)
+        bundle['games'] = []  # made-up field: list of games it contains
+        bundlekey = bundle['product']['machine_name']
+        expires = expire_timestamp(bundle)
 
-                # Add custom fields and insert game in games dict (overwriting)
-                game['bundle'] = bundlekey  # made-up field: bundle it was retrieved from
-                game['expires'] = expires
-                self.games[gamekey] = game
+        # Loop each game in the bundle
+        for game in bundle['subproducts']:
+            gamekey = game['machine_name']
 
-            # remove the now redundant "subproducts" list, and the useless "subscriptions"
-            del bundle['subproducts']
-            del bundle['subscriptions']
+            # Add game name to its bundle game list
+            bundle['games'].append(gamekey)
 
-            # Move 'products' sub-dict to root
-            for k, v in bundle['product'].iteritems():
-                bundle[k] = v
-            del bundle['product']
+            # Add custom fields and insert game in games dict (overwriting)
+            game['bundle'] = bundlekey  # made-up field: bundle it was retrieved from
+            game['expires'] = expires
+            self.games[gamekey] = game
 
-            # Sort games list
-            bundle['games'].sort()
+        # remove the now redundant "subproducts" list, and the useless "subscriptions"
+        del bundle['subproducts']
+        del bundle['subscriptions']
 
-            # Add bundle to bundles list
-            self.bundles[bundlekey] = bundle
+        # Move 'products' sub-dict to root
+        for k, v in bundle['product'].iteritems():
+            bundle[k] = v
+        del bundle['product']
+
+        # Sort games list
+        bundle['games'].sort()
+
+        # Add bundle to bundles list
+        self.bundles[bundlekey] = bundle
 
 
     def download(self, name, path=None, type=None, arch=None, platform=None, bittorrent=False,
