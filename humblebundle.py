@@ -103,15 +103,6 @@ class HumbleBundle(httpbot.HttpBot):
         self.bundles = {}
         self.games   = {}
 
-        def expire_timestamp(bundle):
-            try:
-                url = bundle['subproducts'][0]['downloads'][0]['download_struct'][0]['url']['web']
-                ttl = parse_qs(urlsplit(url).query)['ttl'][0]
-            except (KeyError, IndexError):
-                ttl = time.time() + 24 * 60 * 60
-
-            return int(ttl)
-
         if cache:
             try:
                 with open(osp.join(configdir, "bundles.json")) as fp1:
@@ -124,6 +115,24 @@ class HumbleBundle(httpbot.HttpBot):
 
         # Loop the bundles
         for key in self.keys:
+            self._load_key(key)
+
+        # Save'm all
+        for obj in ['bundles', 'games']:
+            with open(osp.join(configdir, "%s.json" % obj), 'w') as f:
+                json.dump(getattr(self, obj), f, indent=2, separators=(',', ': '), sort_keys=True)
+
+
+    def _load_key(self, key):
+            def expire_timestamp(bundle):
+                try:
+                    url = bundle['subproducts'][0]['downloads'][0]['download_struct'][0]['url']['web']
+                    ttl = parse_qs(urlsplit(url).query)['ttl'][0]
+                except (KeyError, IndexError):
+                    ttl = time.time() + 24 * 60 * 60
+
+                return int(ttl)
+
             log.debug("Retrieving purchase '%s'", key)
             keyfile = osp.join(configdir, "purchases", "%s.json" % key)
             try:
@@ -172,11 +181,6 @@ class HumbleBundle(httpbot.HttpBot):
 
             # Add bundle to bundles list
             self.bundles[bundlekey] = bundle
-
-        # Save'm all
-        for obj in ['bundles', 'games']:
-            with open(osp.join(configdir, "%s.json" % obj), 'w') as f:
-                json.dump(getattr(self, obj), f, indent=2, separators=(',', ': '), sort_keys=True)
 
 
     def download(self, name, path=None, type=None, arch=None, platform=None, bittorrent=False,
