@@ -115,15 +115,19 @@ class HumbleBundle(httpbot.HttpBot):
 
         # Loop the bundles
         for key in self.keys:
-            self._load_key(key)
+            self._load_key(key, save=False)
 
+        self._save_data()
+
+
+    def _save_data(self):
         # Save'm all
         for obj in ['bundles', 'games']:
             with open(osp.join(configdir, "%s.json" % obj), 'w') as f:
                 json.dump(getattr(self, obj), f, indent=2, separators=(',', ': '), sort_keys=True)
 
 
-    def _load_key(self, key):
+    def _load_key(self, key, save=True):
         def expire_timestamp(bundle):
             try:
                 url = bundle['subproducts'][0]['downloads'][0]['download_struct'][0]['url']['web']
@@ -133,24 +137,9 @@ class HumbleBundle(httpbot.HttpBot):
 
             return int(ttl)
 
-        log.debug("Retrieving purchase '%s'", key)
-        keyfile = osp.join(configdir, "purchases", "%s.json" % key)
-        try:
-            with open(keyfile) as fp:
-                j = fp.read()
-        except IOError:
-            url = "/api/v1/order/%s" % key
-            log.debug("Retrieving from %s%s", self.url, url)
-            res = self.get(url)
-            if res:
-                j = res.read()
-                with open(keyfile, 'w') as fp:
-                    fp.write(j)
-            else:
-                log.error("Could not retrieve key '%s', skipping..." % key)
-                continue
-
-        bundle = json.loads(j)
+        url = "/api/v1/order/%s" % key
+        log.debug("Retrieving purchase info from '%s%s'", self.url, url)
+        bundle = json.load(self.get(url))
         bundle['games'] = []  # made-up field: list of games it contains
         bundlekey = bundle['product']['machine_name']
         expires = expire_timestamp(bundle)
@@ -182,6 +171,9 @@ class HumbleBundle(httpbot.HttpBot):
         # Add bundle to bundles list
         self.bundles[bundlekey] = bundle
 
+        if save:
+            self._save_data()
+
 
     def download(self, name, path=None, type=None, arch=None, platform=None, bittorrent=False,
                  type_pref=".deb", arch_pref="64"):
@@ -193,7 +185,7 @@ class HumbleBundle(httpbot.HttpBot):
 
         def do_download(d):
             url = d['url']['bittorrent' if bittorrent else 'web']
-            log.info("Download for '%s' [%s]:\t%s",
+            log.info("Downloading '%s' [%s]\t%s",
                      game['human_name'], game['machine_name'], download_info(d))
             try:
                 return super(HumbleBundle, self).download(url, path)
@@ -273,6 +265,7 @@ class HumbleBundle(httpbot.HttpBot):
 
     def _get_game_info(self, name, retry=True):
         # Get game, if exists
+        log.info("Retrieving game info for '%s'", name)
         game = self.games.get(name, None)
         if not game:
             if retry:
@@ -284,11 +277,10 @@ class HumbleBundle(httpbot.HttpBot):
 
         # Check if info has expired
         if game.get('expires', 0) < time.time():
-            log.warn("'%s' game info has expired.", name)
-            self._load_key(game.get('bundle', {}).get('gamekey', ''))
+            log.debug("Game data for '%s' expired %s", name, time.ctime(game.get('expires', 0)))
+            self._load_key(self.bundles.get(game.get('bundle', ''), {}).get('gamekey', ''))
             return self._get_game_info(name, retry=False)
 
-        log.debug("Retrieving game info for '%s' [%s]", game['human_name'], name)
         return game
 
 
