@@ -90,7 +90,6 @@ class HumbleBundle(httpbot.HttpBot):
                                            cookiejar=self.cookiejar,
                                            debug=debug)
 
-        self.keys    = []  # keys are purchase/bundle keys
         self.bundles = {}  # "purchases" in website. May not be technically a bundle, like Store Purchases
         self.games   = {}  # "subproducts" in json. May not be a game, like Soundtracks and eBooks
 
@@ -98,8 +97,7 @@ class HumbleBundle(httpbot.HttpBot):
 
 
     def _load_data(self, cache=True):
-        ''' Populate keys, bundles and games '''
-        self.keys = self._get_keys(cache=cache)
+        ''' Populate bundles and games '''
         self.bundles = {}
         self.games   = {}
 
@@ -109,14 +107,17 @@ class HumbleBundle(httpbot.HttpBot):
                     with open(osp.join(configdir, "games.json")) as fp2:
                         self.bundles = json.load(fp1)
                         self.games   = json.load(fp2)
+                        log.info("Loaded %d games from %d bundles" % (len(self.games), len(self.bundles)))
                         return
             except IOError:
                 pass
 
         # Loop the bundles
-        for key in self.keys:
+        keys = self._get_keys(cache=cache)
+        for key in keys:
             self._load_key(key, save=False)
 
+        log.info("Loaded %d games from %d bundles" % (len(self.games), len(self.bundles)))
         self._save_data()
 
 
@@ -285,18 +286,6 @@ class HumbleBundle(httpbot.HttpBot):
 
 
     def _get_keys(self, cache=True):
-        keyfile = osp.join(configdir, "keys.json")
-
-        if cache:
-            try:
-                with open(keyfile) as fp:
-                    log.debug("Retrieving keys from cache file '%s'", keyfile)
-                    keys = json.load(fp)
-                    log.info("%d purchase orders found" % len(keys))
-                    return keys
-            except IOError:
-                pass
-
         log.info("Retrieving keys from %s/home", self.url)
         home = self.get('/home').read()
 
@@ -306,11 +295,6 @@ class HumbleBundle(httpbot.HttpBot):
             raise HumbleBundleError("GameKeys list not found")
 
         keys = json.loads(match.groups()[0])
-        log.info("%d purchase orders found" % len(keys))
-        log.debug("Writing keys cache file '%s'", keyfile)
-        with open(keyfile, 'w') as fp:
-            json.dump(keys, fp, indent=0, separators=(',', ': '))
-        os.chmod(keyfile, 0600)
 
         return keys
 
