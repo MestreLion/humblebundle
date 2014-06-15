@@ -384,8 +384,34 @@ def main(args):
         hb.update()
 
     if args.list:
-        for game in sorted(hb.games.items()):
-            print ("%s\t%s" % (game[1]['machine_name'], game[1]['human_name'])).encode('utf-8')
+        for game in sorted(hb.games.keys()):
+            print "%s" % game
+        return
+
+    if args.show:
+        def print_key(key, alias=None, obj=None):
+            print "%-10s: %s" % (alias or key, getattr(obj or game, 'get')(key, ''))
+
+        game = hb.get_game(args.show)
+        print_key('machine_name', 'Game')
+        print_key('human_name', 'Name')
+        print_key('human_name', 'Developer', obj=game.get('payee',{}))
+        print_key('url', 'URL')
+        print_key('', 'Bundles')
+        for bundle in hb.bundles.itervalues():
+            if game.get('machine_name', '') in bundle.get('games', []):
+                print "\t%s [%s]" % (bundle['human_name'], bundle['machine_name'])
+        print_key('', 'Downloads')
+        platform_prev = None
+        for download in sorted(game.get('downloads', []), key=lambda k: k['platform']):
+            platform = download.get('platform', '')
+            if platform_prev != platform:
+                print "\t%s" % platform
+                platform_prev = platform
+            for d in download.get('download_struct', []):
+                a = " %s-bit" % d['arch'] if d.get('arch', None) else ""
+                print "\t\t%-20s%s\t%8s\t%s" % (d['name'], a, d['human_size'],
+                                                urlsplit(d['url']['web']).path[1:])
         return
 
     if args.list_bundles:
@@ -491,6 +517,9 @@ def parseargs(args=None):
     parser.add_argument('--list-bundles', '-L', dest='list_bundles', default=False, action="store_true",
                         help="List all available Bundles (Purchases), "
                             "including Store Front (single product) purchases")
+
+    parser.add_argument('--show', '-s', dest='show',
+                        help="Show all info about selected game")
 
     return parser.parse_args(args)
 
