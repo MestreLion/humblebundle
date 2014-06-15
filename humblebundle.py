@@ -149,20 +149,11 @@ class HumbleBundle(httpbot.HttpBot):
 
     def _load_key(self, key, batch=False, queue=None):
 
-        def expire_timestamp(bundle):
-            try:
-                url = bundle['subproducts'][0]['downloads'][0]['download_struct'][0]['url']['web']
-                ttl = parse_qs(urlsplit(url).query)['ttl'][0]
-            except (KeyError, IndexError):
-                ttl = time.time() + 24 * 60 * 60
-            return int(ttl)
-
         url = "/api/v1/order/%s" % key
         log.info("Retrieving purchase info from '%s%s'", self.url, url)
         bundle = json.load(self.get(url))
         bundle['games'] = []  # made-up field: list of games it contains
         bundlekey = bundle['product']['machine_name']
-        expires = expire_timestamp(bundle)
 
         # Loop each game in the bundle
         games = {}
@@ -174,7 +165,6 @@ class HumbleBundle(httpbot.HttpBot):
 
             # Add custom fields and insert game in games dict (overwriting)
             game['bundle'] = bundlekey  # made-up field: bundle it was retrieved from
-            game['expires'] = expires
             games[gamekey] = game
 
         # remove the now redundant "subproducts" list, and the useless "subscriptions"
@@ -205,7 +195,7 @@ class HumbleBundle(httpbot.HttpBot):
 
 
     def download(self, name, path=None, type=None, arch=None, platform=None,
-                 bittorrent=False, type_pref=".deb", arch_pref="64"):
+                 bittorrent=False, type_pref=".deb", arch_pref="64", retry=True):
 
         def download_info(d):
             a = "\t(%s-bit)" % d['arch'] if d.get('arch', None) else ""
@@ -214,6 +204,31 @@ class HumbleBundle(httpbot.HttpBot):
 
         def do_download(d):
             url = d['url']['bittorrent' if bittorrent else 'web']
+
+            # Check if URL has expired
+            try:
+                ttl = int(parse_qs(urlsplit(url).query)['ttl'][0])
+            except (KeyError, IndexError, ValueError):
+                ttl = 0
+            if ttl < time.time():
+                if not retry:
+                    raise HumbleBundleError("Game data for '%s' expired %s." %
+                                            (name, time.ctime(ttl)))
+
+                log.warn("Game data for '%s' expired %s, will update and retry.",
+                         name, time.ctime(ttl))
+                self._load_key(self.bundles.get(game.get('bundle', ''),
+                                                {}).get('gamekey', ''))
+                return self.download(name=name,
+                                     path=path,
+                                     type=type,
+                                     arch=arch,
+                                     platform=platform,
+                                     bittorrent=bittorrent,
+                                     type_pref=type_pref,
+                                     arch_pref=arch_pref,
+                                     retry=False)
+
             log.info("Downloading '%s' [%s]\t%s",
                      game['human_name'], game['machine_name'], download_info(d))
             try:
@@ -221,11 +236,13 @@ class HumbleBundle(httpbot.HttpBot):
             except httpbot.urllib2.HTTPError as e:
                 if e.code == 403:
                     # Unauthorized. Most likely outdated download URL
-                    log.error(e)
+                    raise HumbleBundleError(
+                        "Download error: %d %s. URL may be outdated, try --update" %
+                        (e.code, e.reason))
                 else:
                     raise
 
-        game = self._get_game_info(name)
+        game = self.get_game(name)
         candidates = []
         finalists = []
 
@@ -292,25 +309,13 @@ class HumbleBundle(httpbot.HttpBot):
         return
 
 
-    def _get_game_info(self, name, retry=True):
+    def get_game(self, name):
         # Get game, if exists
         log.info("Retrieving game info for '%s'", name)
-        game = self.games.get(name, None)
-        if not game:
-            if retry:
-                log.warn("Game '%s' not found. Rebuilding cache", name)
-                self.update()
-                return self._get_game_info(name, retry=False)
-            else:
-                raise HumbleBundleError("Game not found: %s" % name)
-
-        # Check if info has expired
-        if game.get('expires', 0) < time.time():
-            log.debug("Game data for '%s' expired %s", name, time.ctime(game.get('expires', 0)))
-            self._load_key(self.bundles.get(game.get('bundle', ''), {}).get('gamekey', ''))
-            return self._get_game_info(name, retry=False)
-
-        return game
+        try:
+            return self.games[name]
+        except KeyError:
+            raise HumbleBundleError("Game not found: %s" % name)
 
 
     def get(self, url, postdata=None):
