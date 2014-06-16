@@ -318,6 +318,15 @@ class HumbleBundle(httpbot.HttpBot):
             raise HumbleBundleError("Game not found: %s" % name)
 
 
+    def get_bundle(self, name):
+        # Get bundle, if exists
+        log.info("Retrieving bundle info for '%s'", name)
+        try:
+            return self.bundles[name]
+        except KeyError:
+            raise HumbleBundleError("Bundle not found: %s" % name)
+
+
     def get(self, url, postdata=None):
 
         def urlabspath(url):
@@ -390,13 +399,13 @@ def main(args):
 
     if args.show:
         def print_key(key, alias=None, obj=None):
-            print "%-10s: %s" % (alias or key, getattr(obj or game, 'get')(key, ''))
+            print "%-10s: %s" % (alias or key, getattr(obj or game, 'get')(key.lower(), ''))
 
         game = hb.get_game(args.show)
         print_key('machine_name', 'Game')
         print_key('human_name', 'Name')
         print_key('human_name', 'Developer', obj=game.get('payee',{}))
-        print_key('url', 'URL')
+        print_key('URL')
         print_key('', 'Bundles')
         for bundle in hb.bundles.itervalues():
             if game.get('machine_name', '') in bundle.get('games', []):
@@ -412,6 +421,21 @@ def main(args):
                 a = " %s-bit" % d['arch'] if d.get('arch', None) else ""
                 print "\t\t%-20s%s\t%8s\t%s" % (d['name'], a, d['human_size'],
                                                 urlsplit(d['url']['web']).path[1:])
+        return
+
+    if args.show_bundle:
+        def print_key(key, alias=None, obj=None):
+            print "%-10s: %s" % (alias or key, getattr(obj or bundle, 'get')(key.lower(), ''))
+
+        bundle = hb.get_bundle(args.show_bundle)
+        print_key('machine_name', 'Bundle')
+        print_key('human_name', 'Name')
+        print_key('Category')
+        print_key('familyamount', 'Price US$')
+        print_key('', 'Games')
+        for name in sorted(bundle['games']):
+            game = hb.get_game(name)
+            print "\t%s\t[%s]" % (game['human_name'], game['machine_name'])
         return
 
     if args.list_bundles:
@@ -520,6 +544,9 @@ def parseargs(args=None):
 
     parser.add_argument('--show', '-s', dest='show',
                         help="Show all info about selected game")
+
+    parser.add_argument('--show-bundle', '-S', dest='show_bundle',
+                        help="Show all info about selected bundle")
 
     return parser.parse_args(args)
 
