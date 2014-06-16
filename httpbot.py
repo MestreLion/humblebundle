@@ -18,12 +18,13 @@
 #
 # urllib2 wrapper for a simpler, higher-level API
 
-import os.path
+import os
 import urllib
 import urllib2
 import urlparse
 import logging
 from urlparse import urlsplit
+import hashlib
 
 # Debian/Ubuntu: python-lxml
 from lxml import html
@@ -62,7 +63,10 @@ class HttpBot(object):
         else:
             return self._opener.open(url)
 
-    def download(self, url, path=None, total=0, progress=True, CHUNK=0):
+    def download(self, url, path=None, size=0, progress=True, keep_partial=False, CHUNK=0):
+        show = progress and progressbar
+        CHUNK = CHUNK or 32*1024
+
         download = self.get(url)
 
         path = os.path.expanduser(path or ".")
@@ -81,28 +85,46 @@ class HttpBot(object):
             if e.errno != 17:  # File exists
                 raise
 
-        CHUNK = CHUNK or 32*1024
-        show = progress and progressbar
         if show:
-            size = total or int(download.info().get('Content-Length', 0))
+            size = size or int(download.info().get('Content-Length', 0))
             pbar = progressbar.ProgressBar(widgets=[
                 ' ', progressbar.Percentage(), ' of %.1f MiB' % (size/1024.0**2),
                 ' ', progressbar.Bar('.'),
                 ' ', progressbar.FileTransferSpeed(),
                 ' ', progressbar.ETA(),
                 ' '],maxval=size).start()
-        with open(path,'wb') as f:
-            while True:
-                chunk = download.read(CHUNK)
-                if not chunk:
-                    break
-                f.write(chunk)
-                if show:
-                    pbar.update(min([size, pbar.currval + CHUNK]))
-        if show:
-            pbar.finish()
 
-        return path
+        # TODO: Perhaps overkill, but network read and md5/sha1/disk write could be done async
+        # Could save around 30s for a 1-GiB file
+        completed = False
+        md5 = hashlib.md5()
+        sha = hashlib.sha1()
+        size = 0
+        try:
+            with open(path,'wb') as f:
+                while True:
+                    chunk = download.read(CHUNK)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    md5.update(chunk)
+                    sha.update(chunk)
+                    size += len(chunk)
+                    if show:
+                        pbar.update(min([size, pbar.currval + CHUNK]))
+                completed = True
+        except KeyboardInterrupt:
+            pass
+        finally:
+            if show:
+                pbar.finish()
+            if not completed:
+                log.warn("Download aborted")
+                if not keep_partial:
+                    log.debug("Removing partial file")
+                    os.remove(path)
+
+        return path, size, md5.hexdigest(), sha.hexdigest(), completed
 
     def quote(self, text):
         """ Quote a text for URL usage, similar to urllib.quote_plus.

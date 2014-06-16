@@ -19,7 +19,6 @@
 #    along with this program. See <http://www.gnu.org/licenses/gpl.html>
 
 # TODO:
-# - Check download MD5/SHA sums
 # - INI-format config file for non-auth settings like arch-pref, debug level, etc
 
 HB_USERNAME = ""
@@ -238,17 +237,20 @@ class HumbleBundle(httpbot.HttpBot):
             log.info("Downloading '%s' [%s]\t%s",
                      game['human_name'], game['machine_name'], download_info(d))
             try:
-                return super(HumbleBundle, self).download(url, path)
-            except KeyboardInterrupt:
-                raise HumbleBundleError("\nDownload aborted")
+                file, _, _, sha1, completed = super(HumbleBundle, self).download(url, path)
+                if completed:
+                    if sha1 != d.get('sha1', '').lower():
+                        log.debug("Download SHA1 match: %s", sha1)
+                        return file
+                    else:
+                        log.warn("Download SHA1 does not match - file is likely corrupt.")
             except httpbot.urllib2.HTTPError as e:
-                if e.code == 403:
-                    # Unauthorized. Most likely outdated download URL
-                    raise HumbleBundleError(
-                        "Download error: %d %s. URL may be outdated, try --update." %
-                        (e.code, e.reason))
-                else:
+                # Unauthorized (most likely outdated download URL) or something else?
+                if not e.code == 403:
                     raise
+                raise HumbleBundleError(
+                    "Download error: %d %s. URL may be outdated, try --update." %
+                    (e.code, e.reason))
 
         game = self.get_game(name)
         candidates = []
