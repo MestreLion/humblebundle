@@ -3,7 +3,7 @@
 #
 # humblebundle - Manager for Humble Bundle games and bundles
 #
-#    Copyright (C) 2013 Rodrigo Silva (MestreLion) <linux@rodrigosilva.com>
+#    Copyright (C) 2014 Rodrigo Silva (MestreLion) <linux@rodrigosilva.com>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -17,6 +17,10 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with this program. See <http://www.gnu.org/licenses/gpl.html>
+
+# TODO:
+# - Check download MD5/SHA sums
+# - INI-format config file for non-auth settings like arch-pref, debug level, etc
 
 HB_USERNAME = ""
 HB_PASSWORD = ""
@@ -241,7 +245,7 @@ class HumbleBundle(httpbot.HttpBot):
                 if e.code == 403:
                     # Unauthorized. Most likely outdated download URL
                     raise HumbleBundleError(
-                        "Download error: %d %s. URL may be outdated, try --update" %
+                        "Download error: %d %s. URL may be outdated, try --update." %
                         (e.code, e.reason))
                 else:
                     raise
@@ -452,13 +456,6 @@ def main(args):
                     bittorrent=args.bittorrent, platform=args.platform)
         return
 
-    if False:
-        for game in sorted(hb.games.items()):
-            if (game[1]['machine_name'].endswith('_soundtrack') or
-                game[1]['machine_name'].endswith('_android')):
-                continue
-            hb.download(game[1]['machine_name'], osp.join(configdir, 'packages'))
-
 
 def read_config(args):
     config = osp.join(configdir, "login.conf")
@@ -500,13 +497,12 @@ def read_config(args):
 
 def parseargs(args=None):
     parser = argparse.ArgumentParser(
-        description="Humble Bundle Manager.",)
+        description="Humble Bundle Manager",)
 
-    loglevels = ['debug', 'info', 'warn', 'error', 'critical']
-    logdefault = 'debug'
+    default = "info"
     parser.add_argument('--loglevel', '-g', dest='loglevel',
-                        default=logdefault, choices=loglevels,
-                        help="set logging level, default is '%s'" % logdefault)
+                        default=default, choices=['debug', 'info', 'warn', 'error', 'critical'],
+                        help="set logging level, default is '%s'" % default)
 
     parser.add_argument('--username', '-U', dest='username',
                         help="Account login, the user's email")
@@ -526,12 +522,13 @@ def parseargs(args=None):
     parser.add_argument('--arch', '-a', dest='arch', choices=['32', '64'],
                         help="Download architecture: '32' or '64'")
 
+    default = "linux"
     parser.add_argument('--platform', '-p', dest='platform',
-                        default="linux", choices=['windows', 'mac', 'linux', 'android', 'audio'],
-                        help="Download platform")
+                        default=default, choices=['windows', 'mac', 'linux', 'android', 'audio'],
+                        help="Download platform. Default is '%s'" % default)
 
     parser.add_argument('--bittorrent', '-b', dest='bittorrent', default=False, action="store_true",
-                        help="Download via bittorrent")
+                        help="Download bittorrent file instead of direct download")
 
     parser.add_argument('--path', '-f', dest='path',
                         help="Path to download. If directory, default download basename will be used")
