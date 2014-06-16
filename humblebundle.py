@@ -37,11 +37,13 @@ import Queue
 import threading
 
 try:
+    # Debian/Ubuntu: python-keyring
     import keyring
 except ImportError:
     keyring = None
 
 import httpbot
+
 
 log = logging.getLogger(__name__)
 myname = __name__
@@ -233,6 +235,8 @@ class HumbleBundle(httpbot.HttpBot):
                      game['human_name'], game['machine_name'], download_info(d))
             try:
                 return super(HumbleBundle, self).download(url, path)
+            except KeyboardInterrupt:
+                raise HumbleBundleError("\nDownload aborted")
             except httpbot.urllib2.HTTPError as e:
                 if e.code == 403:
                     # Unauthorized. Most likely outdated download URL
@@ -564,6 +568,8 @@ if __name__ == '__main__':
     try:
         sys.exit(0 if main(args) else 1)
 
+    except KeyboardInterrupt:
+        pass
     except HumbleBundleError as e:
         log.critical(e)
     except Exception as e:

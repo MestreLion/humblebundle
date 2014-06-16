@@ -19,13 +19,22 @@
 # urllib2 wrapper for a simpler, higher-level API
 
 import os.path
-
 import urllib
 import urllib2
 import urlparse
-
-from lxml import html
+import logging
 from urlparse import urlsplit
+
+# Debian/Ubuntu: python-lxml
+from lxml import html
+try:
+    # Debian/Ubuntu: python-progressbar
+    import progressbar
+except ImportError:
+    progressbar = None
+
+
+log = logging.getLogger(__name__)
 
 class HttpBot(object):
     """ Base class for other handling basic http tasks like requesting a page,
@@ -53,15 +62,16 @@ class HttpBot(object):
         else:
             return self._opener.open(url)
 
-    def download(self, url, path=None):
+    def download(self, url, path=None, total=0, progress=True, CHUNK=0):
         download = self.get(url)
 
-        path = os.path.expanduser(path or "~")
+        path = os.path.expanduser(path or ".")
 
         # If save name is not set, use the downloaded file name
         # "Not set" means either path is an existing dir or ends with a trailing '/'
         if os.path.isdir(path) or not os.path.basename(path):
             path = os.path.join(path, os.path.basename(urlsplit(download.geturl()).path))
+        log.info("Downloading to %s", path)
 
         # Handle dir
         dirname, _ = os.path.split(path)
@@ -71,8 +81,26 @@ class HttpBot(object):
             if e.errno != 17:  # File exists
                 raise
 
+        CHUNK = CHUNK or 32*1024
+        show = progress and progressbar
+        if show:
+            size = total or int(download.info().get('Content-Length', 0))
+            pbar = progressbar.ProgressBar(widgets=[
+                ' ', progressbar.Percentage(), ' of %.1f MiB' % (size/1024.0**2),
+                ' ', progressbar.Bar('.'),
+                ' ', progressbar.FileTransferSpeed(),
+                ' ', progressbar.ETA(),
+                ' '],maxval=size).start()
         with open(path,'wb') as f:
-            f.write(download.read())
+            while True:
+                chunk = download.read(CHUNK)
+                if not chunk:
+                    break
+                f.write(chunk)
+                if show:
+                    pbar.update(min([size, pbar.currval + CHUNK]))
+        if show:
+            pbar.finish()
 
         return path
 
