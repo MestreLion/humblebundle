@@ -237,13 +237,14 @@ class HumbleBundle(httpbot.HttpBot):
             log.info("Downloading '%s' [%s]\t%s",
                      game['human_name'], game['machine_name'], download_info(d))
             try:
-                file, _, _, sha1, completed = super(HumbleBundle, self).download(url, path)
+                file, _, md5, _, completed = super(HumbleBundle, self).download(url, path)
                 if completed:
-                    if sha1 != d.get('sha1', '').lower():
-                        log.debug("Download SHA1 match: %s", sha1)
+                    if md5 == d.get('md5', '').lower():
+                        log.debug("Download MD5 match: %s", md5)
                         return file
                     else:
-                        log.warn("Download SHA1 does not match - file is likely corrupt.")
+                        log.warn("Download MD5 does not match - file is likely corrupt.")
+                        log.debug("Expected and downloaded MD5:\n%s\n%s", d.get('sha1', '').lower(), md5)
             except httpbot.urllib2.HTTPError as e:
                 # Unauthorized (most likely outdated download URL) or something else?
                 if not e.code == 403:
