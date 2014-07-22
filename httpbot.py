@@ -63,17 +63,19 @@ class HttpBot(object):
         else:
             return self._opener.open(url)
 
-    def download(self, url, path=None, size=0, progress=True, keep_partial=False, CHUNK=0):
+    def download(self, url, path=None, md5sum=None, expected_size=0,
+                 progress=True, keep_partial=False, chunk_size=0):
         show = progress and progressbar
-        CHUNK = CHUNK or 32*1024
+        chunk_size = chunk_size or 32*1024  # 32K is arbitrary
 
         download = self.get(url)
 
-        path = os.path.expanduser(path or ".")
-
+        # Set download path
         # If save name is not set, use the downloaded file name
         # "Not set" means either path is an existing dir or ends with a trailing '/'
+        path = os.path.expanduser(path or ".")
         if os.path.isdir(path) or not os.path.basename(path):
+            #TODO: Parse Content-Disposition header for filename
             path = os.path.join(path, os.path.basename(urlsplit(download.geturl()).path))
         log.info("Downloading to %s", path)
 
@@ -85,33 +87,32 @@ class HttpBot(object):
             if e.errno != 17:  # File exists
                 raise
 
+        size = expected_size or int(download.info().get('Content-Length', 0))
+        if md5sum and os.path.isfile(path) and os.path.getsize(path) == size:
+            log.debug("File already exists, checking its MD5")
+            if filehash(path, hashlib.md5()) == md5sum:
+                log.debug("MD5 matches, skipping download and using cached file")
+                return path
+            else:
+                log.debug("MD5 does not match, downloading")
+
         if show:
-            size = size or int(download.info().get('Content-Length', 0))
             pbar = progressbar.ProgressBar(widgets=[
                 ' ', progressbar.Percentage(), ' of %.1f MiB' % (size/1024.0**2),
                 ' ', progressbar.Bar('.'),
                 ' ', progressbar.FileTransferSpeed(),
                 ' ', progressbar.ETA(),
-                ' '],maxval=size).start()
+                ' '], maxval=size).start()
 
         # TODO: Perhaps overkill, but network read and md5/sha1/disk write could be done async
         # Could save around 30s for a 1-GiB file
         completed = False
-        md5 = hashlib.md5()
-        sha = hashlib.sha1()
-        size = 0
         try:
-            with open(path,'wb') as f:
-                while True:
-                    chunk = download.read(CHUNK)
-                    if not chunk:
-                        break
-                    f.write(chunk)
-                    md5.update(chunk)
-                    sha.update(chunk)
-                    size += len(chunk)
+            with open(path, 'wb') as f:
+                for data in iter(lambda: download.read(chunk_size), ''):
+                    f.write(data)
                     if show:
-                        pbar.update(min([size, pbar.currval + CHUNK]))
+                        pbar.update(min([size, pbar.currval + chunk_size]))
                 completed = True
         except KeyboardInterrupt:
             pass
@@ -124,7 +125,17 @@ class HttpBot(object):
                     log.debug("Removing partial file")
                     os.remove(path)
 
-        return path, size, md5.hexdigest(), sha.hexdigest(), completed
+        if completed:
+            if not md5sum:
+                return path
+
+            hash = filehash(path, hashlib.md5())
+            if md5sum == hash:
+                log.debug("Download MD5 match: %s", md5sum)
+                return path
+            else:
+                log.warn("Download MD5 does not match - file is likely corrupt.")
+                log.debug("Expected and downloaded MD5:\n%s\n%s", md5sum, hash)
 
     def quote(self, text):
         """ Quote a text for URL usage, similar to urllib.quote_plus.
@@ -140,3 +151,12 @@ class HttpBot(object):
         """
         return html.parse(self.get(url, postdata),
                           parser=html.HTMLParser(encoding='utf-8'))
+
+
+def filehash(path, hashobj=None, chunk_size=0):
+    hashobj = hashobj or hashlib.md5()
+    chunk = chunk_size or 32*1024
+    with open(path, 'rb') as f:
+        for data in iter(lambda: f.read(chunk), ''):
+            hashobj.update(data)
+    return hashobj.hexdigest()

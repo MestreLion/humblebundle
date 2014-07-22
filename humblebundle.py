@@ -202,56 +202,56 @@ class HumbleBundle(httpbot.HttpBot):
     def download(self, name, path=None, type=None, arch=None, platform=None,
                  bittorrent=False, type_pref=".deb", arch_pref="64", retry=True):
 
-        def download_info(d):
-            a = "\t(%s-bit)" % d['arch'] if d.get('arch', None) else ""
-            return "'%s'%s\t%s\t%s" % (d['name'], a, d['human_size'],
-                                        urlsplit(d['url']['web']).path[1:])
+        game = self.get_game(name)
+        d = self._choose_download(name=name, type=type, arch=arch, platform=platform,
+                                  type_pref=type_pref, arch_pref=arch_pref)
 
-        def do_download(d):
-            url = d['url']['bittorrent' if bittorrent else 'web']
+        url = d['url']['bittorrent' if bittorrent else 'web']
 
-            # Check if URL has expired
-            try:
-                ttl = int(parse_qs(urlsplit(url).query)['ttl'][0])
-            except (KeyError, IndexError, ValueError):
-                ttl = 0
-            if ttl < time.time():
-                if not retry:
-                    raise HumbleBundleError("Game data for '%s' expired %s." %
-                                            (name, time.ctime(ttl)))
+        # Check if URL has expired
+        try:
+            ttl = int(parse_qs(urlsplit(url).query)['ttl'][0])
+        except (KeyError, IndexError, ValueError):
+            ttl = 0
+        if ttl < time.time():
+            if not retry:
+                raise HumbleBundleError("Game data for '%s' expired %s." %
+                                        (name, time.ctime(ttl)))
 
-                log.warn("Game data for '%s' expired %s, will update and retry.",
-                         name, time.ctime(ttl))
-                self._load_key(self.bundles.get(game.get('bundle', ''),
-                                                {}).get('gamekey', ''))
-                return self.download(name=name,
-                                     path=path,
-                                     type=type,
-                                     arch=arch,
-                                     platform=platform,
-                                     bittorrent=bittorrent,
-                                     type_pref=type_pref,
-                                     arch_pref=arch_pref,
-                                     retry=False)
+            log.warn("Game data for '%s' expired %s, will update and retry.",
+                     name, time.ctime(ttl))
+            self._load_key(self.bundles.get(game.get('bundle', ''),
+                                            {}).get('gamekey', ''))
+            return self.download(name=name,
+                                 path=path,
+                                 type=type,
+                                 arch=arch,
+                                 platform=platform,
+                                 bittorrent=bittorrent,
+                                 type_pref=type_pref,
+                                 arch_pref=arch_pref,
+                                 retry=False)
 
-            log.info("Downloading '%s' [%s]\t%s",
-                     game['human_name'], game['machine_name'], download_info(d))
-            try:
-                file, _, md5, _, completed = super(HumbleBundle, self).download(url, path)
-                if completed:
-                    if md5 == d.get('md5', '').lower():
-                        log.debug("Download MD5 match: %s", md5)
-                        return file
-                    else:
-                        log.warn("Download MD5 does not match - file is likely corrupt.")
-                        log.debug("Expected and downloaded MD5:\n%s\n%s", d.get('sha1', '').lower(), md5)
-            except httpbot.urllib2.HTTPError as e:
-                # Unauthorized (most likely outdated download URL) or something else?
-                if not e.code == 403:
-                    raise
-                raise HumbleBundleError(
-                    "Download error: %d %s. URL may be outdated, try --update." %
-                    (e.code, e.reason))
+        log.info("Downloading '%s' [%s]\t%s",
+                 game['human_name'], game['machine_name'], self._download_info(d))
+        try:
+            return super(HumbleBundle, self).download(url, path, d.get('md5', '').lower())
+        except httpbot.urllib2.HTTPError as e:
+            # Unauthorized (most likely outdated download URL) or something else?
+            if not e.code == 403:
+                raise
+            raise HumbleBundleError(
+                "Download error: %d %s. URL may be outdated, try --update." %
+                (e.code, e.reason))
+
+
+    def _download_info(self, d):
+        a = "\t(%s-bit)" % d['arch'] if d.get('arch', None) else ""
+        return "'%s'%s\t%s\t%s" % (d['name'], a, d['human_size'],
+                                    urlsplit(d['url']['web']).path[1:])
+
+    def _choose_download(self, name, type=None, arch=None, platform=None,
+                         type_pref=None, arch_pref=None):
 
         game = self.get_game(name)
         candidates = []
@@ -277,7 +277,7 @@ class HumbleBundle(httpbot.HttpBot):
                     candidates.append(download)
 
         if len(candidates) == 1:
-            return do_download(candidates[0])
+            return candidates[0]
 
         if len(candidates) == 0:
             log.error("No valid downloads for game '%s' [%s], criteria %r",
@@ -295,7 +295,7 @@ class HumbleBundle(httpbot.HttpBot):
                     finalists.append(download)
 
         if len(finalists) == 1:
-            return do_download(finalists[0])
+            return finalists[0]
 
         # Multiple finalists. Set them as next candidates
         # If no finalists, candidates remain the same
@@ -310,12 +310,12 @@ class HumbleBundle(httpbot.HttpBot):
                     finalists.append(download)
 
         if len(finalists) == 1:
-            return do_download(finalists[0])
+            return finalists[0]
 
         # Give up
         log.error("Too many download candidates for '%s' [%s]. Improve criteria to narrow it down.%s",
                   game['human_name'], game['machine_name'],
-                  "".join(["\n\t%s" % download_info(x) for x in finalists or candidates]))
+                  "".join(["\n\t%s" % self._download_info(x) for x in finalists or candidates]))
         #log.debug("\n%s", json.dumps(finalists or candidates, indent=2))
         return
 
