@@ -20,6 +20,7 @@
 
 # TODO:
 # - INI-format config file for non-auth settings like arch-pref, debug level, etc
+# - Log to file, with debug or info level
 
 HB_USERNAME = ""
 HB_PASSWORD = ""
@@ -502,10 +503,13 @@ def parseargs(args=None):
     parser = argparse.ArgumentParser(
         description="Humble Bundle Manager",)
 
-    default = "info"
+    default = "warn"
     parser.add_argument('--loglevel', '-g', dest='loglevel',
                         default=default, choices=['debug', 'info', 'warn', 'error', 'critical'],
                         help="set logging level, default is '%s'" % default)
+    parser.add_argument('--debug', '-D', dest='loglevel', action="store_const", const="debug",
+                        help="alias for --loglevel debug")
+
 
     parser.add_argument('--username', '-U', dest='username',
                         help="Account login, the user's email")
@@ -552,7 +556,9 @@ def parseargs(args=None):
     parser.add_argument('--show-bundle', '-S', dest='show_bundle',
                         help="Show all info about selected bundle")
 
-    return parser.parse_args(args)
+    args = parser.parse_args(args)
+    args.debug = args.loglevel=='debug'
+    return args
 
 
 
@@ -561,7 +567,6 @@ if __name__ == '__main__':
     myname = osp.basename(osp.splitext(__file__)[0])
     configdir = xdg.save_config_path(myname)
     args = parseargs()
-    args.debug = args.loglevel=='debug'
     logging.basicConfig(level=getattr(logging, args.loglevel.upper(), None),
                         format='%(asctime)s\t%(levelname)-8s\t%(message)s')
 
