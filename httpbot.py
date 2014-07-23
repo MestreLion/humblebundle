@@ -76,7 +76,8 @@ class HttpBot(object):
         path = os.path.expanduser(path or ".")
         if os.path.isdir(path) or not os.path.basename(path):
             #TODO: Parse Content-Disposition header for filename
-            path = os.path.join(path, os.path.basename(urlsplit(download.geturl()).path))
+            basename = urllib.unquote(os.path.basename(urlsplit(download.geturl()).path))
+            path = os.path.join(path, basename)
         log.info("Downloading to %s", path)
 
         # Handle dir
