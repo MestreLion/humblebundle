@@ -39,6 +39,8 @@ import cookielib
 from urlparse import urljoin, urlsplit, parse_qs
 import Queue
 import threading
+import subprocess
+import shlex
 
 try:
     # Debian/Ubuntu: python-keyring
@@ -51,6 +53,8 @@ import httpbot
 
 log = logging.getLogger(__name__)
 myname = __name__
+mydir = osp.dirname(osp.realpath(__file__))
+cachedir = None
 configdir = None
 
 class HumbleBundleError(Exception):
@@ -101,15 +105,26 @@ class HumbleBundle(httpbot.HttpBot):
         self.bundles = {}  # "purchases" in website. May not be technically a bundle, like Store Purchases
         self.games   = {}  # "subproducts" in json. May not be a game, like Soundtracks and eBooks
 
+        # Load bundles and games
         try:
             with open(osp.join(configdir, "bundles.json")) as fp1:
                 with open(osp.join(configdir, "games.json")) as fp2:
                     self.bundles = json.load(fp1)
                     self.games   = json.load(fp2)
                     log.info("Loaded %d games from %d bundles" % (len(self.games), len(self.bundles)))
-                    return
         except IOError:
             self.update()
+
+        # Merge install instructions
+        self.gamedata = osp.join(mydir, "gamedata.json")
+        log.debug("Merging games install data from %s", self.gamedata)
+        try:
+            with open(self.gamedata) as fp:
+                games = json.load(fp)
+            for game in self.games:
+                self.games[game].update(games.get(game, {}))
+        except IOError as e:
+            log.warn("Error merging games install data: %s", e)
 
 
     def update(self):
@@ -321,6 +336,109 @@ class HumbleBundle(httpbot.HttpBot):
         return
 
 
+    def install(self, name):
+        game = self.get_game(name)
+        method = game.get('install', "").lower()
+
+        def execute(command):
+            try:
+                log.debug("Executing: %s", command)
+                subprocess.check_call(shlex.split(command))
+            except (subprocess.CalledProcessError, OSError) as e:
+                log.error("Error installing '%s': %s", name, e)
+
+        def download(specs):
+            for spec in specs:
+                specs[spec] = game.get(spec, specs[spec])
+            specs['type'] = specs.pop('download', None)
+            return self.download(name, path=cachedir, **specs)
+
+        if not method:
+            raise HumbleBundleError("No install data for '%s', please check '%s'" %
+                                    (name, self.gamedata))
+
+        elif method == "deb":
+            specs = dict(download=None, arch=None, platform="linux",
+                         type_pref=".deb", arch_pref="64")
+            deb = download(specs)
+            if deb:
+                execute("sudo dpkg --force-depends --install '%s'" % deb)
+                execute("sudo apt-get --yes --fix-broken install")
+
+        elif method == "apt":
+            package = game.get("package", name)
+            execute('sudo apt-get install --yes "%s"' % package)
+
+        elif method == "steam":
+            try:
+                execute("steam steam://install/%d" % game['steamid'])
+            except KeyError:
+                raise HumbleBundleError(
+                    "No steamid for steam-installable game '%s'" % name)
+
+        elif method == "mojo":
+            specs = dict(download=None, arch=None, platform="linux",
+                         type_pref="sh", arch_pref="64")
+            installer = download(specs)
+            if not installer:
+                return
+            path = osp.join(osp.expanduser("~/.local/opt"),
+                            game.get('mojoname', name.split("_", 1)[0].title()))
+            execute("chmod +x '%s'" % installer)
+            execute("'%s' -- --destination '%s' --noreadme --noprompt --nooptions --i-agree-to-all-licenses" %
+                    (installer, path))
+
+        elif method == "manual":
+            log.error("MANUAL install method not implemented yet")
+
+        else:
+            log.error("Invalid install method for '%s': '%s'", name, method)
+
+
+    def uninstall(self, name):
+        game = self.get_game(name)
+        method = game.get('install', "").lower()
+        command = ""
+
+        if not method:
+            raise HumbleBundleError("No install data for '%s', please check '%s'" %
+                                    (name, self.gamedata))
+
+        elif method in ["deb", "apt"]:
+            package = game.get("package", name)
+            command = 'sudo apt-get remove --auto-remove --yes "%s"' % package
+
+        elif method == "steam":
+            try:
+                command = "steam steam://uninstall/%d" % game['steamid']
+            except KeyError:
+                raise HumbleBundleError(
+                    "No steamid for steam-installable game '%s'" % name)
+
+        elif method == "mojo":
+            mojoname = game.get('mojoname', name.split("_", 1)[0].title())
+            uninstaller = osp.join(osp.expanduser("~/.local/opt"),
+                                   mojoname,
+                                   "uninstall-%s.sh" % mojoname)
+            command = "'%s' --noprompt" % uninstaller
+
+
+        elif method == "manual":
+            log.error("MANUAL uninstall method not implemented yet")
+
+        else:
+            log.error("Invalid uninstall method for '%s': '%s'", name, method)
+
+        if not command:
+            return
+
+        try:
+            log.debug("Executing: %s", command)
+            subprocess.check_call(shlex.split(command))
+        except (subprocess.CalledProcessError, OSError) as e:
+            log.error("Error unstalling '%s': %s", name, e)
+
+
     def get_game(self, name):
         # Get game, if exists
         log.info("Retrieving game info for '%s'", name)
@@ -460,6 +578,14 @@ def main(args):
                     bittorrent=args.bittorrent, platform=args.platform)
         return
 
+    if args.install:
+        hb.install(args.install)
+        return
+
+    if args.uninstall:
+        hb.uninstall(args.uninstall)
+        return
+
 
 def read_config(args):
     config = osp.join(configdir, "login.conf")
@@ -556,6 +682,12 @@ def parseargs(args=None):
     parser.add_argument('--show-bundle', '-S', dest='show_bundle',
                         help="Show all info about selected bundle")
 
+    parser.add_argument('--install', '-i', dest='install',
+                        help="Install selected game")
+
+    parser.add_argument('--uninstall', '-I', dest='uninstall',
+                        help="Uninstall selected game")
+
     args = parser.parse_args(args)
     args.debug = args.loglevel=='debug'
     return args
@@ -566,6 +698,8 @@ def parseargs(args=None):
 if __name__ == '__main__':
     myname = osp.basename(osp.splitext(__file__)[0])
     configdir = xdg.save_config_path(myname)
+    cachedir = osp.join(xdg.xdg_cache_home, myname)
+
     args = parseargs()
     logging.basicConfig(level=getattr(logging, args.loglevel.upper(), None),
                         format='%(asctime)s\t%(levelname)-8s\t%(message)s')

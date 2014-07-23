@@ -1,0 +1,9 @@
+{
+"antichamber":                               {"install": "mojo", "mojoname": "Antichamber"},
+"bittripbeat":                               {"install": "apt", "package": "bit-trip-beat"},
+"bittriprunner":                             {"install": "deb", "package": "bit.trip.runner"},
+"braid":                                     {"install": "apt", "package": "braid"},
+"crayonphysicsdeluxe_android_pc_soundtrack": {"install": "apt", "package": "crayon-physics-deluxe"},
+"dearesther":                                {"install": "deb", "package": "ia32-dearesther"},
+"fieldrunners2":                             {"install": "mojo", "mojoname": "Fieldrunners2"}
+}
