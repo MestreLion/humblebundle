@@ -1,0 +1,31 @@
+gamedata.json contains instructions on how to install each Humble Bundle game.
+
+Relevant fields used by install methods are:
+	package:	Name of the installed package. Defaults to HB name [apt, deb]
+	mojoname:	Defines install dir and uninstall script name. Defaults to simplified, titled HB name [mojo]
+			gamename_with_underscores -> Gamename
+	download:	Name (type) of the install file to download. No default value, but favors .deb packages [deb, mojo]
+	steamid:	Steam AppID of the game [steam]
+
+
+Additional info on some games
+-----------------------------
+
+amnesia
+	Also available in USC as 'amnesia' package, but not from any particular bundle list
+
+anomalywarzoneearth_pc
+	Package 'anomaly' exists in USC, but is not available in HiB Android 3 USC list
+
+bastion
+bastion_bundle
+	Same game, but "bastion" from HiB 5 is in USC as 'bastion' package,
+	"bastion_bundle" is from from HiB 9, which has no USC list.
+
+brokenswordshadowofthetemplars
+	Also available in HiB Android 6 USC list as 'broken-sword-directors-cut'
+
+limbo
+limbo_bundle
+	Crossover version in USC as 'limbo'.
+	Recently got native version in both HB (mojo installer 'limbo') and SteamOS
