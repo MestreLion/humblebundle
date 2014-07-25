@@ -13,7 +13,7 @@
 "fieldrunners_android_pc_soundtrack":        {"install": "apt", "package": "fieldrunners"},
 "fieldrunners2":                             {"install": "mojo", "mojoname": "Fieldrunners2"},
 "fractal":                                   {"install": "apt", "package": "fractal"},
-"greedcorp":                                 {"install": "custom"},
+"greedcorp":                                 {"install": "custom", "dirname": "GreedCorp"},
 "incredipede":                               {"install": "custom"},
 "jamestown":                                 {"install": "apt", "package": "jamestown"},
 "lonesurvivor_linux":                        {"install": "apt", "package": "lonesurvivor"},
