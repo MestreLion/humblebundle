@@ -1,0 +1,11 @@
+diff -ur a/data/Incredipede.html b/data/Incredipede.html
+--- a/data/Incredipede.html	2013-06-13 18:28:00.000000000 -0300
++++ b/data/Incredipede.html	2013-10-15 19:12:48.331303612 -0300
+@@ -2,6 +2,7 @@
+ <html>
+ <head>
+ 	<title>Incredipede: a game about life and feet</title>
++	<link rel="icon" type="image/png" href="images/thumbnail.png" />
+ 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+ 	<meta name="language" content="en" />
+ 	<meta name="description" content="A game where you build and control creatures to solve puzzles" />
