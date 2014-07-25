@@ -345,12 +345,16 @@ class HumbleBundle(httpbot.HttpBot):
         game = self.get_game(name)
         method = game.get('install', "").lower()
 
-        def execute(command):
+        def execute(command, cwd=None):
             try:
                 log.debug("Executing: %s", command)
-                subprocess.check_call(shlex.split(command))
+                subprocess.check_call(shlex.split(command), cwd=cwd)
             except (subprocess.CalledProcessError, OSError) as e:
-                log.error("Error installing '%s': %s", name, e)
+                if getattr(e, 'errno', 0) == 2:  # OSError, No such file or directory
+                    log.error("Error installing '%s': %s: %s",
+                              name, e.strerror, shlex.split(command)[0])
+                else:
+                    log.error("Error installing '%s': %s", name, e)
 
         def download(specs):
             for spec in specs:
@@ -393,8 +397,22 @@ class HumbleBundle(httpbot.HttpBot):
             execute("'%s' -- --destination '%s' --noreadme --noprompt --nooptions --i-agree-to-all-licenses" %
                     (installer, path))
 
-        elif method == "manual":
-            log.error("MANUAL install method not implemented yet")
+        elif method == "custom":
+            specs = dict(download=None, arch=None, platform="linux",
+                         type_pref=None, arch_pref="64")
+            archive = download(specs)
+            if not archive:
+                return
+
+            hookdir = osp.join(mydir, "hooks", name)
+            hookfile = osp.join(hookdir, "%s.install.hook" % name)
+            basename = game.get('basename', name.split("_", 1)[0])
+            # FIXME: Make sure basename is valid: single word, no punc, etc
+            installdir = osp.join(osp.expanduser("~"), '.local', 'opt',
+                                  game.get('dirname', basename))
+            execute("'%s' '%s' '%s' '%s'" %
+                    (hookfile, basename, installdir, osp.abspath(archive)),
+                    cwd=hookdir)
 
         else:
             log.error("Invalid install method for '%s': '%s'", name, method)
@@ -428,8 +446,11 @@ class HumbleBundle(httpbot.HttpBot):
             command = "'%s' --noprompt" % uninstaller
 
 
-        elif method == "manual":
-            log.error("MANUAL uninstall method not implemented yet")
+        elif method == "custom":
+            basename = game.get('basename', name.split("_", 1)[0])
+            installdir = osp.join(osp.expanduser("~"), '.local', 'opt',
+                                  game.get('dirname', basename))
+            command = "'%s/uninstall' '%s'" % (installdir, basename)
 
         else:
             log.error("Invalid uninstall method for '%s': '%s'", name, method)

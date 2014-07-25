@@ -4,8 +4,11 @@ Relevant fields used by install methods are:
 	package:	Name of the installed package. Defaults to HB name [apt, deb]
 	mojoname:	Defines install dir and uninstall script name. Defaults to simplified, titled HB name [mojo]
 			gamename_with_underscores -> Gamename
-	download:	Name (type) of the install file to download. No default value, but favors .deb packages [deb, mojo]
+	download:	Name (type) of the install file to download. No default value, but favors .deb packages [deb, mojo, custom]
 	steamid:	Steam AppID of the game [steam]
+	basename:	A "game ID" name that defines install dir, icon name and other settings [custom]
+			Similar in usage to mojoname, defaults to a simplified HB name
+	dirname:	Basename of install path. Defaults to basename [custom]
 
 
 Additional info on some games
