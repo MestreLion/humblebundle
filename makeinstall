@@ -1,0 +1,39 @@
+#!/bin/bash
+#
+# makeinstall - Helper to create new game install scripts
+#
+#    Copyright (C) 2014 Rodrigo Silva (MestreLion) <linux@rodrigosilva.com>
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+mydir=$(dirname "$(readlink -f "$0")")
+
+if ! [[ "$1" ]]; then
+	echo "Usage: ${0##*/} <Humble Bundle game name> [install script name]"
+	exit 1
+fi
+
+humble=$1
+script=${2:-$humble}
+
+cd "$mydir"
+
+cat > "$script".install <<-EOF
+	#!/bin/sh
+	"\$(dirname "\$0")"/humblebundle --"\${0##*.}" "$humble"
+EOF
+
+ln -s "$script".{,un}install
+
+chmod +x "$script".install
