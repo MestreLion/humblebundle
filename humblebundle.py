@@ -123,7 +123,7 @@ class HumbleBundle(httpbot.HttpBot):
                 games = json.load(fp)
             for game in self.games:
                 self.games[game].update(games.get(game, {}))
-        except IOError as e:
+        except (IOError, ValueError) as e:
             log.warn("Error merging games install data: %s", e)
 
 
@@ -337,6 +337,11 @@ class HumbleBundle(httpbot.HttpBot):
 
 
     def install(self, name):
+        # References:
+        # Steam: https://developer.valvesoftware.com/wiki/Steam_browser_protocol
+        # USC:   https://software-center.ubuntu.com/subscriptions/
+        # Mojo: scripts/mojosetup_mainline.lua
+
         game = self.get_game(name)
         method = game.get('install', "").lower()
 
@@ -548,6 +553,8 @@ def main(args):
                 print "\t%s" % platform
                 platform_prev = platform
             for d in download.get('download_struct', []):
+                if 'url' not in d:
+                    continue
                 a = " %s-bit" % d['arch'] if d.get('arch', None) else ""
                 print "\t\t%-20s%s\t%8s\t%s" % (d['name'], a, d['human_size'],
                                                 urlsplit(d['url']['web']).path[1:])
@@ -596,7 +603,10 @@ def read_config(args):
     # read
     if keyring:
         log.debug("Reading credentials from keyring")
-        username, password = (keyring.get_password(myname, '').split('\n') + ['\n'])[:2]
+        try:
+            username, password = (keyring.get_password(myname, '').split('\n') + ['\n'])[:2]
+        except IOError as e:
+            log.error(e)
     else:
         log.debug("Reading credentials from '%s'" % config)
         try:
