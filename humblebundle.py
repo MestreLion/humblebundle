@@ -222,6 +222,9 @@ class HumbleBundle(httpbot.HttpBot):
         d = self._choose_download(name=name, type=type, arch=arch, platform=platform,
                                   type_pref=type_pref, arch_pref=arch_pref)
 
+        if not d:
+            return
+
         url = d['url']['bittorrent' if bittorrent else 'web']
 
         # Check if URL has expired
@@ -305,7 +308,7 @@ class HumbleBundle(httpbot.HttpBot):
                   json.dumps(candidates, indent=2))
 
         # Try type (download name) preference
-        if not type:
+        if not type and type_pref:
             for download in candidates:
                 if type_pref.lower() in download.get('name', '').lower():
                     finalists.append(download)
@@ -320,7 +323,7 @@ class HumbleBundle(httpbot.HttpBot):
         finalists = []  # must NOT be .clear(), see above
 
         # Try arch preference
-        if not arch:
+        if not arch and arch_pref:
             for download in candidates:
                 if download.get('arch', '') and download['arch'] == arch_pref:
                     finalists.append(download)
