@@ -20,7 +20,7 @@
 "machinarium":                               {"install": "deb", "package": "machinarium"},
 "mcpixel_android_pc":                        {"install": "manual", "package": "gd.sos.mcpixel"},
 "metalslug3":                                {"install": "mojo", "mojoname": "MetalSlug3"},
-"nightsky_android_pc":                       {"install": "custom"},
+"nightsky_android_pc":                       {"install": "custom", "basename": "nightsky"},
 "offspringfling":                            {"install": "apt", "package": "offspring-fling"},
 "papoandyo":                                 {"install": "mojo", "mojoname": "PapoYo"},
 "starseedpilgrim":                           {"install": "custom"},
