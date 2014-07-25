@@ -12,10 +12,10 @@ Additional info on some games
 -----------------------------
 
 amnesia
-	Also available in USC as 'amnesia' package, but not from any particular bundle list
+	Also available in USC apt-get as 'amnesia' package, but not from any particular bundle list
 
 anomalywarzoneearth_pc
-	Package 'anomaly' exists in USC, but is not available in HiB Android 3 USC list
+	Package 'anomaly' exists in USC, but is not available in HiB Android 3 USC list anymore
 
 bastion
 bastion_bundle
@@ -23,9 +23,61 @@ bastion_bundle
 	"bastion_bundle" is from from HiB 9, which has no USC list.
 
 brokenswordshadowofthetemplars
-	Also available in HiB Android 6 USC list as 'broken-sword-directors-cut'
+	Also available in HiB Android 6 USC list, but not in HiB Android 7.
+	Package 'broken-sword-directors-cut'
+
+fieldrunners_android_pc_soundtrack
+	USC apt-get only available for HiB Android 3. For HiB Android 10 use 'deb' method
+
+gianasisters_twisteddreams
+	Not available for Linux or Mac
 
 limbo
 limbo_bundle
 	Crossover version in USC as 'limbo'.
 	Recently got native version in both HB (mojo installer 'limbo') and SteamOS
+
+mcpixel_android_pc
+	The '32 bit .deb' download is a .deb inside a .zip file. Package is 'gd.sos.mcpixel'
+
+
+The following games are in SteamOS but are also available in USC.
+
+HumbleBundle Name	USC Package
+-----------------	-----------
+amnesia	amnesia
+anomalywarzoneearth_pc	anomaly
+capsized	capsized
+cavestoryplus	cave-story-plus
+closure	closure
+dustforce	dustforce
+dynamitejack_android_pc	dynamitejack
+edge	edge
+englishcountrytune	english-country-tune
+gratuitousspacebattles	gratuitous-space-battles
+hotlinemiami	hotline-miami-meta
+legendofgrimrock	legend-of-grimrock
+limbo	limbo
+littleinferno	little-inferno-meta
+offspringfling	offspring-fling
+oilrush	oilrush
+organtraildirectorscut	organ-trail
+osmos_android_pc_soundtrack	osmos
+proteus	proteus-meta
+psychonauts	psychonauts
+rochard	rochard
+shank 2	shank2
+shatter	shatter
+snapshot_hib7	snapshot
+solar_android_pc	solar2
+spacechem_android_pc_soundtrack	spacechem
+spaz	spacepiratesandzombies
+spirits_android_pc_soundtrack	spirits
+splice	splice
+stealthbastarddeluxe	stealth-bastard-deluxe-meta
+superhexagon_android_pc	super-hexagon
+supermeatboy_no_soundtrack	supermeatboy
+swordandsworcery	swordandsworcery
+uplink_android_pc_soundtrack	uplink
+wakingmars_android_pc	waking-mars
+worldofgoo_android_pc_soundtrack	worldofgoo
