@@ -234,8 +234,8 @@ class HumbleBundle(httpbot.HttpBot):
                 raise HumbleBundleError("Game data for '%s' expired %s." %
                                         (name, time.ctime(ttl)))
 
-            log.warn("Game data for '%s' expired %s, will update and retry.",
-                     name, time.ctime(ttl))
+            log.debug("Game data for '%s' expired %s, will update and retry.",
+                      name, time.ctime(ttl))
             self._load_key(self.bundles.get(game.get('bundle', ''),
                                             {}).get('gamekey', ''))
             return self.download(name=name,
@@ -248,8 +248,8 @@ class HumbleBundle(httpbot.HttpBot):
                                  arch_pref=arch_pref,
                                  retry=False)
 
-        log.info("Downloading '%s' [%s]\t%s",
-                 game['human_name'], game['machine_name'], self._download_info(d))
+        print "Downloading '%s' [%s]\t%s" % (
+            game['human_name'], game['machine_name'], self._download_info(d))
         try:
             return super(HumbleBundle, self).download(url, path, d.get('md5', '').lower())
         except httpbot.urllib2.HTTPError as e:
