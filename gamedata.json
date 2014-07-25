@@ -8,7 +8,7 @@
 "canabalt_android_and_pc":                   {"install": "custom"},
 "crayonphysicsdeluxe_android_pc_soundtrack": {"install": "apt", "package": "crayon-physics-deluxe"},
 "dearesther":                                {"install": "deb", "package": "ia32-dearesther"},
-"drawastickmanepic_bundle":                  {"install": "custom"},
+"drawastickmanepic_bundle":                  {"install": "custom", "basename": "drawastickman"},
 "eufloriahd_android_pc_soundtrack":          {"install": "apt", "package": "eufloriahd"},
 "fieldrunners_android_pc_soundtrack":        {"install": "apt", "package": "fieldrunners"},
 "fieldrunners2":                             {"install": "mojo", "mojoname": "Fieldrunners2"},
