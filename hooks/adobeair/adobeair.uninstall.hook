@@ -1,0 +1,7 @@
+#!/bin/sh -e
+
+# Custom uninstall hook for Adobe AIR
+
+echo "Uninstalling Adobe AIR"
+../../humblebundle --uninstall adobeair --method apt
+echo "Done!"

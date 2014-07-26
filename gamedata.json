@@ -27,5 +27,7 @@
 "swordsandsoldiers_android_and_pc":          {"install": "apt", "package": "swordsandsoldiers"},
 "torchlight":                                {"install": "apt", "package": "torchlight"},
 "vessel":                                    {"install": "custom"},
-"wizorb_soundtrack":                         {"install": "deb", "package": "wizorb"}
+"wizorb_soundtrack":                         {"install": "deb", "package": "wizorb"},
+
+"adobeair":                                  {"install": "custom", "download": "bin", "package": "adobeair"}
 }

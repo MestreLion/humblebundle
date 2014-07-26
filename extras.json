@@ -1,0 +1,59 @@
+{
+  "adobeair": {
+    "machine_name": "adobeair",
+    "human_name": "Adobe AIR 2.6 Runtime",
+    "url": "http://get.adobe.com/air",
+    "icon": "http://wwwimages.adobe.com/www.adobe.com/images/store/product_boxshots/90x90/air_90x90.jpg",
+    "payee": {
+      "human_name": "Adobe",
+      "machine_name": "adobe"
+    },
+    "downloads": [
+      {
+        "download_struct": [
+          {
+            "file_size": 16127348,
+            "human_size": "15.4 MB",
+            "md5": "a91369be7ab40e3c5d5bc9fb02b95041",
+            "name": "Adobe .bin installer",
+            "url": {
+              "web": "http://airdownload.adobe.com/air/lin/download/2.6/AdobeAIRInstaller.bin"
+            }
+          }
+        ],
+        "machine_name": "adobeair_upstream_installer_linux",
+        "platform": "linux"
+      },
+      {
+        "download_struct": [
+          {
+            "file_size": 14855686,
+            "human_size": "14.2 MB",
+            "md5": "a8d7051edf745d8b73d798f833f1c339",
+            "name": "Adobe upstream .deb",
+            "url": {
+              "web": "http://airdownload.adobe.com/air/lin/download/2.6/adobeair.deb"
+            }
+          }
+        ],
+        "machine_name": "adobeair_upstream_debian_linux",
+        "platform": "linux"
+      },
+      {
+        "download_struct": [
+          {
+            "file_size": 14852158,
+            "human_size": "14.2 MB",
+            "md5": "c72efd38ca020311ce220c58d1b2299a",
+            "name": "Ubuntu Lucid .deb",
+            "url": {
+              "web": "http://launchpadlibrarian.net/73533974/adobeair_2.6.0.19170-0lucid1_i386.deb"
+            }
+          }
+        ],
+        "machine_name": "adobeair_ubuntu_linux",
+        "platform": "linux"
+      }
+    ]
+  }
+}

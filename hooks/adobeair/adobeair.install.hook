@@ -1,0 +1,57 @@
+#!/bin/bash -e
+
+# Custom install hook for Adobe AIR
+# Based on AIR installer from Anodyne for Steam
+# See ~/.local/share/Steam/SteamApps/common/Anodyne/install.sh
+
+# Additional references:
+# http://www.defendersquest.com/1/?page=linux_steam
+# https://launchpad.net/ubuntu/lucid/i386/adobeair
+# http://steamcommunity.com/app/218410/discussions/0/666826069039698014/
+# http://orkultus.wordpress.com/2013/03/23/installing-adobe-air-2-6-on-64bit-linux-mint-ubuntu/
+
+# Alternate methods:
+# https://aur.archlinux.org/packages/ad/adobe-air/adobe-air.tar.gz
+# http://www.reddit.com/r/linux_gaming/comments/1dtpf4/
+
+basename=$1
+dir=$2
+archive=$3
+
+if [ $# -ne 3 ] ; then
+	echo "Usage: ${0##*/} BASENAME INSTALLDIR ARCHIVE"
+	exit 1
+fi
+
+echo "Installing Adobe AIR"
+
+ARCH=$(uname -m)
+
+find_lib() {
+	if [ "$ARCH" = "x86_64" ]; then
+		/sbin/ldconfig -p | grep -F "$1" | grep -F -m 1 x86-64 | awk '{print $NF}'
+	else
+		/sbin/ldconfig -p | grep -F -m 1 "$1" | awk '{print $NF}'
+	fi
+}
+
+LIB_PATHS=
+# try to figure out where the gnome keyring/kwallet libraries for the
+# actual system architecture are, so the installer can load them (since it
+# tries to load them manually ...)
+# TODO: not sure yet if the 32bit installer needs this
+KEYRING="$(find_lib libgnome-keyring.so)"
+if [ -n "$KEYRING" ]; then
+	LIB_PATHS="$(dirname "$KEYRING"):$LIB_PATHS"
+fi
+# TODO: find actual library name AIR is looking for (qdbus?!)
+KWALLET="$(find_lib kwallet)"
+if [ -n "$KWALLET" ]; then
+	LIB_PATHS="$(dirname "$KWALLET"):$LIB_PATHS"
+fi
+
+export LD_LIBRARY_PATH="$LIB_PATHS${LD_LIBRARY_PATH+:$LD_LIBRARY_PATH}"
+chmod +x "$archive"
+"$archive"
+
+echo "Done!"

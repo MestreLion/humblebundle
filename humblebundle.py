@@ -115,6 +115,16 @@ class HumbleBundle(httpbot.HttpBot):
         except IOError:
             self.update()
 
+        # Merge extras
+        extras = osp.join(mydir, "extras.json")
+        log.debug("Merging extras from %s", extras)
+        try:
+            with open(extras) as fp:
+                games = json.load(fp)
+            self.games.update(games)
+        except (IOError, ValueError) as e:
+            log.warn("Error merging extras: %s", e)
+
         # Merge install instructions
         self.gamedata = osp.join(mydir, "gamedata.json")
         log.debug("Merging games install data from %s", self.gamedata)
@@ -221,18 +231,22 @@ class HumbleBundle(httpbot.HttpBot):
         game = self.get_game(name)
         d = self._choose_download(name=name, type=type, arch=arch, platform=platform,
                                   type_pref=type_pref, arch_pref=arch_pref)
-
         if not d:
             return
 
-        url = d['url']['bittorrent' if bittorrent else 'web']
+        url = d['url'].get('bittorrent' if bittorrent else 'web','')
+        if not url:
+            log.error("Selected download has no URL")
+            return
 
         # Check if URL has expired
         try:
             ttl = int(parse_qs(urlsplit(url).query)['ttl'][0])
-        except (KeyError, IndexError, ValueError):
-            ttl = 0
-        if ttl < time.time():
+        except KeyError:
+            ttl = 0  # No TTL
+        except (IndexError, ValueError) as e:
+            ttl = -1  # Invalid TTL
+        if ttl and ttl < time.time():
             if not retry:
                 raise HumbleBundleError("Game data for '%s' expired %s." %
                                         (name, time.ctime(ttl)))
@@ -267,7 +281,7 @@ class HumbleBundle(httpbot.HttpBot):
     def _download_info(self, d):
         a = "\t(%s-bit)" % d['arch'] if d.get('arch', None) else ""
         return "'%s'%s\t%s\t%s" % (d['name'], a, d['human_size'],
-                                    urlsplit(d['url']['web']).path[1:])
+                                   osp.basename(urlsplit(d['url']['web']).path))
 
     def _choose_download(self, name, type=None, arch=None, platform=None,
                          type_pref=None, arch_pref=None):
@@ -339,14 +353,14 @@ class HumbleBundle(httpbot.HttpBot):
         return
 
 
-    def install(self, name):
+    def install(self, name, method=None):
         # References:
         # Steam: https://developer.valvesoftware.com/wiki/Steam_browser_protocol
         # USC:   https://software-center.ubuntu.com/subscriptions/
         # Mojo: scripts/mojosetup_mainline.lua
 
         game = self.get_game(name)
-        method = game.get('install', "").lower()
+        method = method or game.get('install', "").lower()
 
         def execute(command, cwd=None):
             try:
@@ -422,10 +436,11 @@ class HumbleBundle(httpbot.HttpBot):
             log.error("Invalid install method for '%s': '%s'", name, method)
 
 
-    def uninstall(self, name):
+    def uninstall(self, name, method=None):
         game = self.get_game(name)
-        method = game.get('install', "").lower()
+        method = method or game.get('install', "").lower()
         command = ""
+        popenargs = {}
 
         if not method:
             raise HumbleBundleError("No install data for '%s', please check '%s'" %
@@ -452,9 +467,13 @@ class HumbleBundle(httpbot.HttpBot):
 
         elif method == "custom":
             basename = game.get('basename', name.split("_", 1)[0])
-            installdir = osp.join(osp.expanduser("~"), '.local', 'opt',
-                                  game.get('dirname', basename))
-            command = "'%s/uninstall' '%s'" % (installdir, basename)
+            uninstaller = osp.join(osp.expanduser("~"), '.local', 'opt',
+                                  game.get('dirname', basename), "uninstall")
+            if not osp.isfile(uninstaller):
+                hookdir = osp.join(mydir, "hooks", name)
+                uninstaller = osp.join(hookdir, "%s.uninstall.hook" % name)
+                popenargs['cwd'] = hookdir
+            command = "'%s'" % uninstaller
 
         else:
             log.error("Invalid uninstall method for '%s': '%s'", name, method)
@@ -464,9 +483,13 @@ class HumbleBundle(httpbot.HttpBot):
 
         try:
             log.debug("Executing: %s", command)
-            subprocess.check_call(shlex.split(command))
+            subprocess.check_call(shlex.split(command), **popenargs)
         except (subprocess.CalledProcessError, OSError) as e:
-            log.error("Error unstalling '%s': %s", name, e)
+            if getattr(e, 'errno', 0) == 2:  # OSError, No such file or directory
+                log.error("Error uninstalling '%s': %s: %s",
+                          name, e.strerror, shlex.split(command)[0])
+            else:
+                log.error("Error uninstalling '%s': %s", name, e)
 
 
     def get_game(self, name):
@@ -582,7 +605,7 @@ def main(args):
                     continue
                 a = " %s-bit" % d['arch'] if d.get('arch', None) else ""
                 print "\t\t%-20s%s\t%8s\t%s" % (d['name'], a, d['human_size'],
-                                                urlsplit(d['url']['web']).path[1:])
+                                                osp.basename(urlsplit(d['url']['web']).path))
         return
 
     if args.show_bundle:
@@ -611,11 +634,11 @@ def main(args):
         return
 
     if args.install:
-        hb.install(args.install)
+        hb.install(args.install, args.method)
         return
 
     if args.uninstall:
-        hb.uninstall(args.uninstall)
+        hb.uninstall(args.uninstall, args.method)
         return
 
 
@@ -722,6 +745,9 @@ def parseargs(args=None):
 
     parser.add_argument('--uninstall', '-I', dest='uninstall',
                         help="Uninstall selected game")
+
+    parser.add_argument('--method', '-m', dest='method', choices=['custom', 'deb', 'apt', 'mojo', 'steam'],
+                        help="Use this method instead of the default for (un-)installing a game")
 
     args = parser.parse_args(args)
     args.debug = args.loglevel=='debug'

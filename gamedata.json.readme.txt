@@ -14,6 +14,14 @@ Relevant fields used by install methods are:
 Additional info on some games
 -----------------------------
 
+adobeair
+	There's also 2 .deb files available, one from Ubuntu Lucid 10.04 partner repository, which is
+	expected to go End of Life and shut down on April 2015, the other from Adobe itself.
+	Both install fine in Ubuntu Precise 12.04 64-bit, but both fail to succeed installing games.
+	So currently the configured install method uses the .bin installer from Adobe.
+	It requires custom install script, a GUI, and it's not fully unattended, but version is exactly
+	the same (1:2.6.0.19170). It also registers itself in dpkg as an installed package
+
 amnesia
 	Also available in USC apt-get as 'amnesia' package, but not from any particular bundle list
 
