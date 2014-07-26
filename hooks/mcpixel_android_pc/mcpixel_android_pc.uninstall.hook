@@ -1,0 +1,7 @@
+#!/bin/sh -e
+
+# Custom uninstall hook for Adobe AIR
+
+echo "Uninstalling McPixel"
+../../humblebundle --uninstall mcpixel_android_pc --method apt
+echo "Done!"

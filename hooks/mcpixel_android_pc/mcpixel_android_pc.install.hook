@@ -1,0 +1,33 @@
+#!/bin/sh -e
+
+# Custom install hook for Humble Bundle game McPixel
+
+# Copyright (C) 2014 Rodrigo Silva (MestreLion) <linux@rodrigosilva.com>
+# License: GPLv3 or later. See <http://www.gnu.org/licenses/gpl.html>
+
+basename=$1
+dir=$2
+archive=$3
+gamename=$5
+
+if [ $# -lt 3 ] ; then
+	echo "Usage: ${0##*/} BASENAME INSTALLDIR ARCHIVE"
+	exit 1
+fi
+
+# Check if Adobe AIR is installed
+if ! dpkg -s 'adobeair' 1>/dev/null 2>&1 ; then
+	../../humblebundle --install adobeair
+fi
+
+echo "Installing $gamename"
+
+# Extract archive to a temp dir
+tempdir=$(mktemp -d)
+trap "rm -rf -- '$tempdir'" EXIT
+unzip -qo -d "$tempdir" "$archive"  # an .air inside a zip. Nice job upstream!
+
+# Execute the installer
+"/usr/bin/Adobe AIR Application Installer" "$tempdir"/McPixel.air
+
+echo "Done!"

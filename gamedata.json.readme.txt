@@ -49,7 +49,11 @@ limbo_bundle
 	Recently got native version in both HB (mojo installer 'limbo') and SteamOS
 
 mcpixel_android_pc
-	The '32 bit .deb' download is a .deb inside a .zip file. Package is 'gd.sos.mcpixel'
+	3 download choices, all have pros and cons:
+	'32 bit .deb': .deb inside a .zip. Package 'gd.sos.mcpixel', predepends on 'adobeair'.
+		The .swf inside is not standalone, so it requires Adobe AIR anyway.
+	'Air': .air installer inside a .zip. Obviously requires Adobe AIR to run
+	'.tar.gz': standalone .swf inside. The only that runs on Flash and does not require AIR. But zip has no icons.
 
 
 The following games are in SteamOS but are also available in USC.
