@@ -414,6 +414,17 @@ class HumbleBundle(httpbot.HttpBot):
             execute("'%s' -- --destination '%s' --noreadme --noprompt --nooptions --i-agree-to-all-licenses" %
                     (installer, path))
 
+        elif method == "air":
+            specs = dict(download=None, arch=None, platform="linux",
+                         type_pref="air", arch_pref="64")
+            installer = download(specs)
+            if not installer:
+                return
+            adobeair = "/usr/bin/Adobe AIR Application Installer"
+            if not osp.isfile(adobeair):
+                self.install('adobeair')
+            execute("'%s' '%s'" % (adobeair, installer))
+
         elif method == "custom":
             specs = dict(download=None, arch=None, platform="linux",
                          type_pref=None, arch_pref="64")
@@ -446,7 +457,7 @@ class HumbleBundle(httpbot.HttpBot):
             raise HumbleBundleError("No install data for '%s', please check '%s'" %
                                     (name, self.gamedata))
 
-        elif method in ["deb", "apt"]:
+        elif method in ["deb", "apt", "air"]:
             package = game.get("package", name)
             command = 'sudo apt-get remove --auto-remove --yes "%s"' % package
 
@@ -755,7 +766,7 @@ def parseargs(args=None):
     parser.add_argument('--uninstall', '-I', dest='uninstall',
                         help="Uninstall selected game")
 
-    parser.add_argument('--method', '-m', dest='method', choices=['custom', 'deb', 'apt', 'mojo', 'steam'],
+    parser.add_argument('--method', '-m', dest='method', choices=['custom', 'deb', 'apt', 'mojo', 'air', 'steam'],
                         help="Use this method instead of the default for (un-)installing a game")
 
     args = parser.parse_args(args)
@@ -775,7 +786,7 @@ if __name__ == '__main__':
                         format='%(asctime)s\t%(levelname)-8s\t%(message)s')
 
     try:
-        sys.exit(0 if main(args) else 1)
+        sys.exit(main(args))
 
     except KeyboardInterrupt:
         pass

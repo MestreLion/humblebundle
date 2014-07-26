@@ -23,7 +23,7 @@
 "nightsky_android_pc":                       {"install": "custom", "basename": "nightsky"},
 "offspringfling":                            {"install": "apt", "package": "offspring-fling"},
 "papoandyo":                                 {"install": "mojo", "mojoname": "PapoYo"},
-"starseedpilgrim":                           {"install": "custom"},
+"starseedpilgrim":                           {"install": "air"},
 "swordsandsoldiers_android_and_pc":          {"install": "apt", "package": "swordsandsoldiers"},
 "torchlight":                                {"install": "apt", "package": "torchlight"},
 "vessel":                                    {"install": "custom"},
