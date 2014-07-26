@@ -410,8 +410,9 @@ class HumbleBundle(httpbot.HttpBot):
             # FIXME: Make sure basename is valid: single word, no punc, etc
             installdir = osp.join(osp.expanduser("~"), '.local', 'opt',
                                   game.get('dirname', basename))
-            execute("'%s' '%s' '%s' '%s'" %
-                    (hookfile, basename, installdir, osp.abspath(archive)),
+            execute("'%s' '%s' '%s' '%s' '%s' '%s' '%s'" %
+                    (hookfile, basename, installdir, osp.abspath(archive),
+                     name, game.get('human_name', ''), game.get('icon', '')),
                     cwd=hookdir)
 
         else:

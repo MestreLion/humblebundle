@@ -9,7 +9,7 @@ basename=$1
 dir=$2
 archive=$3
 
-if !(($#==3)); then
+if (($# < 3)); then
 	echo "Usage: ${0##*/} BASENAME INSTALLDIR ARCHIVE"
 	exit 1
 fi
