@@ -55,5 +55,32 @@
         "platform": "linux"
       }
     ]
+  },
+  "flashplayer": {
+    "machine_name": "flashplayer",
+    "human_name": "Flash Player 11.2 Standalone (Projector)",
+    "url": "http://www.adobe.com/support/flashplayer/downloads.html",
+    "icon": "http://wwwimages.adobe.com/labs.adobe.com/cdn/technologies/flash/images/fl_appicon_150x150.jpg",
+    "payee": {
+      "human_name": "Adobe",
+      "machine_name": "adobe"
+    },
+    "downloads": [
+      {
+        "download_struct": [
+          {
+            "file_size": 5959028,
+            "human_size": "5.7 MB",
+            "md5": "557b961af0d2e56a2a8ac512b9cf44bb",
+            "name": "Download",
+            "url": {
+              "web": "http://fpdownload.macromedia.com/pub/flashplayer/updaters/11/flashplayer_11_sa.i386.tar.gz"
+            }
+          }
+        ],
+        "machine_name": "flashplayer_linux",
+        "platform": "linux"
+      }
+    ]
   }
 }
