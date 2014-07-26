@@ -585,6 +585,9 @@ def main(args):
             print "%-10s: %s" % (alias or key, getattr(obj or game, 'get')(key.lower(), ''))
 
         game = hb.get_game(args.show)
+        if args.json:
+            print json.dumps(game, indent=2, separators=(',', ': '), sort_keys=True)
+            return
         print_key('machine_name', 'Game')
         print_key('human_name', 'Name')
         print_key('human_name', 'Developer', obj=game.get('payee',{}))
@@ -613,6 +616,9 @@ def main(args):
             print "%-10s: %s" % (alias or key, getattr(obj or bundle, 'get')(key.lower(), ''))
 
         bundle = hb.get_bundle(args.show_bundle)
+        if args.json:
+            print json.dumps(bundle, indent=2, separators=(',', ': '), sort_keys=True)
+            return
         print_key('machine_name', 'Bundle')
         print_key('human_name', 'Name')
         print_key('Category')
@@ -739,6 +745,9 @@ def parseargs(args=None):
 
     parser.add_argument('--show-bundle', '-S', dest='show_bundle',
                         help="Show all info about selected bundle")
+
+    parser.add_argument('--json', '-j', dest='json', default=False, action="store_true",
+                        help="Output --show/--show-bundle in machine-readable, JSON format")
 
     parser.add_argument('--install', '-i', dest='install',
                         help="Install selected game")
