@@ -13,7 +13,7 @@
 "fieldrunners_android_pc_soundtrack":        {"install": "apt", "package": "fieldrunners"},
 "fieldrunners2":                             {"install": "mojo", "mojoname": "Fieldrunners2"},
 "fractal":                                   {"install": "apt", "package": "fractal"},
-"greedcorp":                                 {"install": "custom", "dirname": "GreedCorp"},
+"greedcorp":                                 {"install": "custom"},
 "incredipede":                               {"install": "custom"},
 "jamestown":                                 {"install": "apt", "package": "jamestown"},
 "lonesurvivor_linux":                        {"install": "apt", "package": "lonesurvivor"},
@@ -26,7 +26,7 @@
 "starseedpilgrim":                           {"install": "air"},
 "swordsandsoldiers_android_and_pc":          {"install": "apt", "package": "swordsandsoldiers"},
 "torchlight":                                {"install": "apt", "package": "torchlight"},
-"vessel":                                    {"install": "custom"},
+"vessel":                                    {"install": "mojo", "mojoname": "vessel"},
 "wizorb_soundtrack":                         {"install": "deb", "package": "wizorb"},
 
 "adobeair":                                  {"install": "custom", "download": "bin", "package": "adobeair"}
