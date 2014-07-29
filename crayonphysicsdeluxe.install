@@ -1,0 +1,2 @@
+#!/bin/sh
+"$(dirname "$0")"/humblebundle --"${0##*.}" "crayonphysicsdeluxe_android_pc_soundtrack"
