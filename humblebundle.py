@@ -198,9 +198,11 @@ class HumbleBundle(httpbot.HttpBot):
             game['bundle'] = bundlekey  # made-up field: bundle it was retrieved from
             games[gamekey] = game
 
-        # remove the now redundant "subproducts" list, and the useless "subscriptions"
+        # remove the now redundant "subproducts" list
         del bundle['subproducts']
-        del bundle['subscriptions']
+
+        # Remove useless fields, that may not be present anyway
+        bundle.pop('subscriptions', None)
 
         # Move 'products' sub-dict to root
         for k, v in bundle['product'].iteritems():
