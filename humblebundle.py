@@ -112,9 +112,12 @@ class HumbleBundle(httpbot.HttpBot):
                     self.bundles = json.load(fp1)
                     self.games   = json.load(fp2)
                     log.info("Loaded %d games from %d bundles" % (len(self.games), len(self.bundles)))
+            self._merge()
         except IOError:
             self.update()
 
+
+    def _merge(self):
         # Merge extras
         extras = osp.join(mydir, "extras.json")
         log.debug("Merging extras from %s", extras)
@@ -163,6 +166,7 @@ class HumbleBundle(httpbot.HttpBot):
             self.games.update(games)
 
         log.info("Updated %d games from %d bundles" % (len(self.games), len(self.bundles)))
+        self._merge()
         self._save_data()
 
 
