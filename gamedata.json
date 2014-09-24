@@ -4,6 +4,8 @@
 "bindingofisaac_dlc":                        {"install": "deb", "package": "isaac"},
 "bittripbeat":                               {"install": "apt", "package": "bit-trip-beat"},
 "bittriprunner":                             {"install": "deb", "package": "bit.trip.runner"},
+"blackwellconvergence":                      {"install": "mojo", "mojoname": "Blackwell_3_Convergence"},
+"blackwellunbound":                          {"install": "mojo", "mojoname": "Blackwell_2_Unbound"},
 "canabalt_android_and_pc":                   {"install": "custom", "basename": "canabalt", "download": "flash"},
 "crayonphysicsdeluxe_android_pc_soundtrack": {"install": "apt", "package": "crayon-physics-deluxe"},
 "dearesther":                                {"install": "deb", "package": "ia32-dearesther"},
@@ -25,6 +27,7 @@
 "starseedpilgrim":                           {"install": "air"},
 "swordsandsoldiers_android_and_pc":          {"install": "apt", "package": "swordsandsoldiers"},
 "torchlight":                                {"install": "apt", "package": "torchlight"},
+"theblackwelllegacy":                        {"install": "mojo", "mojoname": "Blackwell_1_Legacy"},
 "vessel":                                    {"install": "mojo", "mojoname": "vessel"},
 "wizorb_soundtrack":                         {"install": "deb", "package": "wizorb"},
 
