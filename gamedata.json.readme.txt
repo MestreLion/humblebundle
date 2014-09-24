@@ -62,6 +62,7 @@ HumbleBundle Name	USC Package
 -----------------	-----------
 amnesia	amnesia
 anomalywarzoneearth_pc	anomaly
+braid	braid
 capsized	capsized
 cavestoryplus	cave-story-plus
 closure	closure
