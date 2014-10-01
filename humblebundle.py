@@ -369,9 +369,12 @@ class HumbleBundle(httpbot.HttpBot):
         method = method or game.get('install', "").lower()
 
         def execute(command, cwd=None):
+            return executecmd(shlex.split(command), cwd)
+
+        def executecmd(command, cwd=None):
             try:
                 log.debug("Executing: %s", command)
-                subprocess.check_call(shlex.split(command), cwd=cwd)
+                subprocess.check_call(command, cwd=cwd)
             except (subprocess.CalledProcessError, OSError) as e:
                 if getattr(e, 'errno', 0) == 2:  # OSError, No such file or directory
                     log.error("Error installing '%s': %s: %s",
@@ -444,10 +447,14 @@ class HumbleBundle(httpbot.HttpBot):
             # FIXME: Make sure basename is valid: single word, no punc, etc
             installdir = osp.join(osp.expanduser("~"), '.local', 'opt',
                                   game.get('dirname', basename))
-            execute("'%s' '%s' '%s' '%s' '%s' '%s' '%s'" %
-                    (hookfile, basename, installdir, osp.abspath(archive),
-                     name, game.get('human_name', ''), game.get('icon', '')),
-                    cwd=hookdir)
+            executecmd([hookfile,
+                        basename,
+                        installdir,
+                        osp.abspath(archive),
+                        name,
+                        game.get('human_name', ''),
+                        game.get('icon', '')],
+                       cwd=hookdir)
 
         else:
             log.error("Invalid install method for '%s': '%s'", name, method)
