@@ -1,2 +1,2 @@
 #!/bin/sh
-"$(dirname "$0")"/humblebundle --"${0##*.}" "offspringfling"
+"$(dirname "$0")"/../humblebundle.py --"${0##*.}" "offspringfling"

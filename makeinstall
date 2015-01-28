@@ -27,11 +27,11 @@ fi
 humble=$1
 script=${2:-$humble}
 
-cd "$mydir"
+cd "$mydir"/installers
 
 cat > "$script".install <<-EOF
 	#!/bin/sh
-	"\$(dirname "\$0")"/humblebundle --"\${0##*.}" "$humble"
+	"\$(dirname "\$0")"/../humblebundle.py --"\${0##*.}" "$humble"
 EOF
 
 ln -s "$script".{,un}install
