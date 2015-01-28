@@ -586,7 +586,11 @@ class HumbleBundle(httpbot.HttpBot):
 
 
 
-def main(args):
+def main(argv=None):
+
+    args, parser = parseargs(argv)
+    logging.basicConfig(level=getattr(logging, args.loglevel.upper(), None),
+                        format='%(asctime)s\t%(levelname)-8s\t%(message)s')
 
     config = read_config(args)
 
@@ -669,6 +673,9 @@ def main(args):
     elif args.uninstall:
         hb.uninstall(args.uninstall, args.method)
 
+    else:
+        parser.print_usage()
+
 
 def read_config(args):
     config = osp.join(configdir, "login.conf")
@@ -711,7 +718,7 @@ def read_config(args):
                 password=password,)
 
 
-def parseargs(args=None):
+def parseargs(argv=None):
     parser = argparse.ArgumentParser(
         description="Humble Bundle Manager",)
 
@@ -780,9 +787,9 @@ def parseargs(args=None):
     parser.add_argument('--method', '-m', dest='method', choices=['custom', 'deb', 'apt', 'mojo', 'air', 'steam'],
                         help="Use this method instead of the default for (un-)installing a game")
 
-    args = parser.parse_args(args)
+    args = parser.parse_args(argv)
     args.debug = args.loglevel=='debug'
-    return args
+    return args, parser
 
 
 
@@ -792,12 +799,8 @@ if __name__ == '__main__':
     configdir = xdg.save_config_path(myname)
     cachedir = osp.join(xdg.xdg_cache_home, myname)
 
-    args = parseargs()
-    logging.basicConfig(level=getattr(logging, args.loglevel.upper(), None),
-                        format='%(asctime)s\t%(levelname)-8s\t%(message)s')
-
     try:
-        sys.exit(main(args))
+        sys.exit(main())
 
     except KeyboardInterrupt:
         pass
