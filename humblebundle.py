@@ -231,11 +231,14 @@ class HumbleBundle(httpbot.HttpBot):
         self._save_data()
 
 
-    def download(self, name, path=None, type=None, arch=None, platform=None,
-                 bittorrent=False, type_pref=".deb", arch_pref="64", retry=True):
+    def download(self, name, path=None, bittorrent=False,
+                 type=None, arch=None, platform=None, serverfile=None,
+                 type_pref=".deb", arch_pref="64",
+                 retry=True):
 
         game = self.get_game(name)
-        d = self._choose_download(name=name, type=type, arch=arch, platform=platform,
+        d = self._choose_download(name=name, type=type, arch=arch,
+                                  platform=platform, serverfile=serverfile,
                                   type_pref=type_pref, arch_pref=arch_pref)
         if not d:
             return
@@ -269,6 +272,7 @@ class HumbleBundle(httpbot.HttpBot):
                                  bittorrent=bittorrent,
                                  type_pref=type_pref,
                                  arch_pref=arch_pref,
+                                 serverfile=serverfile,
                                  retry=False)
 
         print "Downloading '%s' [%s]\t%s" % (
@@ -283,14 +287,17 @@ class HumbleBundle(httpbot.HttpBot):
                 "Download error: %d %s. URL may be outdated, try --update." %
                 (e.code, e.reason))
 
+    def _download_basename(self, d):
+        basename = osp.basename(urlsplit(d.get('url', {}).get('web', "")).path)
+        return basename
 
     def _download_info(self, d):
         a = "\t(%s-bit)" % d['arch'] if d.get('arch', None) else ""
         return "'%s'%s\t%s\t%s" % (d['name'], a, d['human_size'],
-                                   osp.basename(urlsplit(d['url']['web']).path))
+                                   self._download_basename(d))
 
     def _choose_download(self, name, type=None, arch=None, platform=None,
-                         type_pref=None, arch_pref=None):
+                         serverfile=None, type_pref=None, arch_pref=None):
 
         game = self.get_game(name)
         candidates = []
@@ -301,6 +308,9 @@ class HumbleBundle(httpbot.HttpBot):
             if plat.get('platform', '') == platform:
                 for download in plat.get('download_struct', []):
                     if not download.get('url', ''):
+                        continue
+                    if (serverfile and
+                        serverfile.lower() != self._download_basename(download).lower()):
                         continue
                     if type and type.lower() not in download.get('name', '').lower():
                         continue
@@ -319,12 +329,20 @@ class HumbleBundle(httpbot.HttpBot):
             return candidates[0]
 
         if len(candidates) == 0:
-            log.error("No valid downloads for game '%s' [%s], criteria %r",
-                      game['human_name'], game['machine_name'], {'type':type, 'arch':arch})
+            log.error("No valid downloads for game '%s' [%s]\n\t criteria %r",
+                      game['human_name'], game['machine_name'],
+                      {'type':type,
+                       'arch':arch,
+                       'serverfile':serverfile,
+                       'platform':platform})
             return
 
-        log.debug("Many download candidates for '%s' [%s], criteria %r: \n%s",
-                  game['human_name'], game['machine_name'], {'type':type, 'arch':arch},
+        log.debug("Many download candidates for '%s' [%s]\n\tcriteria %r:\n%s",
+                  game['human_name'], game['machine_name'],
+                  {'type':type,
+                   'arch':arch,
+                   'serverfile':serverfile,
+                   'platform':platform},
                   json.dumps(candidates, indent=2))
 
         # Try type (download name) preference
@@ -640,7 +658,7 @@ def main(argv=None):
                     continue
                 a = " %s-bit" % d['arch'] if d.get('arch', None) else ""
                 print "\t\t%-20s%s\t%8s\t%s" % (d['name'], a, d['human_size'],
-                                                osp.basename(urlsplit(d['url']['web']).path))
+                                                hb._download_basename(d))
 
     elif args.show_bundle:
         def print_key(key, alias=None, obj=None):
@@ -669,7 +687,8 @@ def main(argv=None):
                            type=args.type,
                            arch=args.arch,
                            bittorrent=args.bittorrent,
-                           platform=args.platform):
+                           platform=args.platform,
+                           serverfile=args.serverfile):
             return 1
 
     elif args.install:
@@ -751,12 +770,18 @@ def parseargs(argv=None):
                         help="Type (name) of the download, for example '.deb', 'mojo', 'flash', etc")
 
     parser.add_argument('--arch', '-a', dest='arch', choices=['32', '64'],
-                        help="Download architecture: '32' or '64'")
+                        help="Download architecture: 32-bit (also known as i386)"
+                            " or 64-bit (amd64, x86_64, etc)")
 
     default = "linux"
     parser.add_argument('--platform', '-p', dest='platform',
                         default=default, choices=['windows', 'mac', 'linux', 'android', 'audio', 'ebook', 'comedy'],
                         help="Download platform. Default is '%s'" % default)
+
+    parser.add_argument('--server-file', '-F', dest='serverfile', metavar="FILE",
+                        help="Basename of the server file to download."
+                            " Useful when no combination of --type, --arch and --platform is enough"
+                            " to narrow down choices to a single download.")
 
     parser.add_argument('--bittorrent', '-b', dest='bittorrent', default=False, action="store_true",
                         help="Download bittorrent file instead of direct download")
