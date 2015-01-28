@@ -357,8 +357,8 @@ class HumbleBundle(httpbot.HttpBot):
         # Multiple finalists. Set them as next candidates
         # If no finalists, candidates remain the same
         if len(finalists) > 1:
-            candidates = finalists  # be careful
-        finalists = []  # must NOT be .clear(), see above
+            candidates = finalists[:]
+        finalists = []
 
         # Try arch preference
         if not arch and arch_pref:
@@ -368,6 +368,20 @@ class HumbleBundle(httpbot.HttpBot):
 
         if len(finalists) == 1:
             return finalists[0]
+
+        # Try type again, with more restrictive matching
+        if type:
+            for rule in ('starts', 'is'):
+                if finalists:
+                    candidates = finalists[:]
+                    finalists = []
+                for download in candidates:
+                    name = download.get('name', '').lower()
+                    if ((rule == 'is'     and name == type.lower()) or
+                        (rule == 'starts' and name.startswith(type.lower()))):
+                        finalists.append(download)
+                if len(finalists) == 1:
+                    return finalists[0]
 
         # Give up
         log.error("Too many download candidates for '%s' [%s]. Improve criteria to narrow it down.%s",
