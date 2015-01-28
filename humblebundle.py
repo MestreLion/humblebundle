@@ -744,10 +744,10 @@ def parseargs(argv=None):
     parser.add_argument('--auth', '-A', dest='auth',
                         help="Account _simpleauth_sess cookie")
 
-    parser.add_argument('--download', '-d', dest='download',
-                        help="Machine Name of the game to download. See --list")
+    parser.add_argument('--download', '-d', dest='download', metavar="GAME",
+                        help="Name of the game to download. See --list")
 
-    parser.add_argument('--type', '-t', dest='type',
+    parser.add_argument('--type', '-t', dest='type', metavar="NAME",
                         help="Type (name) of the download, for example '.deb', 'mojo', 'flash', etc")
 
     parser.add_argument('--arch', '-a', dest='arch', choices=['32', '64'],
@@ -762,7 +762,8 @@ def parseargs(argv=None):
                         help="Download bittorrent file instead of direct download")
 
     parser.add_argument('--path', '-f', dest='path',
-                        help="Path to download. If directory, default download basename will be used")
+                        help="Path to download. If PATH is a directory, default download basename will be used."
+                            " By if omitted, download to current directory.")
 
     parser.add_argument('--update', '-u', dest='update', default=False, action="store_true",
                         help="Fetch all games and bundles data from the server, rebuilding the cache")
@@ -774,19 +775,19 @@ def parseargs(argv=None):
                         help="List all available Bundles (Purchases), "
                             "including Store Front (single product) purchases")
 
-    parser.add_argument('--show', '-s', dest='show',
+    parser.add_argument('--show', '-s', dest='show', metavar="GAME",
                         help="Show all info about selected game")
 
-    parser.add_argument('--show-bundle', '-S', dest='show_bundle',
+    parser.add_argument('--show-bundle', '-S', dest='show_bundle', metavar="BUNDLE",
                         help="Show all info about selected bundle")
 
     parser.add_argument('--json', '-j', dest='json', default=False, action="store_true",
                         help="Output --show/--show-bundle in machine-readable, JSON format")
 
-    parser.add_argument('--install', '-i', dest='install',
+    parser.add_argument('--install', '-i', dest='install', metavar="GAME",
                         help="Install selected game")
 
-    parser.add_argument('--uninstall', '-I', dest='uninstall',
+    parser.add_argument('--uninstall', '-I', dest='uninstall', metavar="GAME",
                         help="Uninstall selected game")
 
     parser.add_argument('--method', '-m', dest='method', choices=['custom', 'deb', 'apt', 'mojo', 'air', 'steam'],
