@@ -745,7 +745,7 @@ def parseargs(args=None):
 
     default = "linux"
     parser.add_argument('--platform', '-p', dest='platform',
-                        default=default, choices=['windows', 'mac', 'linux', 'android', 'audio'],
+                        default=default, choices=['windows', 'mac', 'linux', 'android', 'audio', 'ebook', 'comedy'],
                         help="Download platform. Default is '%s'" % default)
 
     parser.add_argument('--bittorrent', '-b', dest='bittorrent', default=False, action="store_true",
