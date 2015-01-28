@@ -652,24 +652,33 @@ def main(argv=None):
         if args.json:
             print json.dumps(game, indent=2, separators=(',', ': '), sort_keys=True)
             return
-        print_key('machine_name', 'Game')
-        print_key('human_name', 'Name')
-        print_key('human_name', 'Developer', obj=game.get('payee',{}))
-        print_key('URL')
-        print_key('', 'Bundles')
-        for bundle in hb.bundles.itervalues():
-            if game.get('machine_name', '') in bundle.get('games', []):
-                print "\t%s [%s]" % (bundle['human_name'], bundle['machine_name'])
-        print_key('', 'Downloads')
-        platform_prev = None
+        if not args.formattedlist:
+                print_key('machine_name', 'Game')
+                print_key('human_name', 'Name')
+                print_key('human_name', 'Developer', obj=game.get('payee',{}))
+                print_key('URL')
+                print_key('', 'Bundles')
+                for bundle in hb.bundles.itervalues():
+                    if game.get('machine_name', '') in bundle.get('games', []):
+                        print "\t%s [%s]" % (bundle['human_name'], bundle['machine_name'])
+                print_key('', 'Downloads')
+                platform_prev = None
         for download in sorted(game.get('downloads', []), key=lambda k: k['platform']):
-            platform = download.get('platform', '')
-            if platform_prev != platform:
-                print "\t%s" % platform
-                platform_prev = platform
+            if not args.formattedlist:
+                platform = download.get('platform', '')
+                if platform_prev != platform:
+                    print "\t%s" % platform
+                    platform_prev = platform
             for d in download.get('download_struct', []):
                 if 'url' not in d:
                     continue
+                if args.formattedlist:
+                    print "%s\t%s\t%s" % (
+                                           osp.basename(urlsplit(d['url']['web']).path),
+                                           d['md5'],
+                                           d['url']['web'],
+                                         )
+                    return
                 a = " %s-bit" % d['arch'] if d.get('arch', None) else ""
                 print "\t\t%-20s%s\t%8s\t%s" % (d['name'], a, d['human_size'],
                                                 hb._download_basename(d))
@@ -822,6 +831,9 @@ def parseargs(argv=None):
 
     parser.add_argument('--json', '-j', dest='json', default=False, action="store_true",
                         help="Output --show/--show-bundle in machine-readable, JSON format")
+
+    parser.add_argument('--formatted-list', dest='formattedlist', default=False, action="store_true",
+                        help="Output --show/--show-bundle in a formatted list")
 
     parser.add_argument('--install', '-i', dest='install', metavar="GAME",
                         help="Install selected game")
