@@ -602,9 +602,8 @@ def main(args):
     if args.list:
         for game in sorted(hb.games.keys()):
             print "%s" % game
-        return
 
-    if args.show:
+    elif args.show:
         def print_key(key, alias=None, obj=None):
             print "%-10s: %s" % (alias or key, getattr(obj or game, 'get')(key.lower(), ''))
 
@@ -633,9 +632,8 @@ def main(args):
                 a = " %s-bit" % d['arch'] if d.get('arch', None) else ""
                 print "\t\t%-20s%s\t%8s\t%s" % (d['name'], a, d['human_size'],
                                                 osp.basename(urlsplit(d['url']['web']).path))
-        return
 
-    if args.show_bundle:
+    elif args.show_bundle:
         def print_key(key, alias=None, obj=None):
             print "%-10s: %s" % (alias or key, getattr(obj or bundle, 'get')(key.lower(), ''))
 
@@ -651,25 +649,25 @@ def main(args):
         for name in sorted(bundle['games']):
             game = hb.get_game(name)
             print "\t%s\t[%s]" % (game['human_name'], game['machine_name'])
-        return
 
-    if args.list_bundles:
+    elif args.list_bundles:
         for bundle in sorted(hb.bundles.items()):
             print ("%s\t%s" % (bundle[1]['machine_name'], bundle[1]['human_name'])).encode('utf-8')
-        return
 
-    if args.download:
-        hb.download(name=args.download, path=args.path, type=args.type, arch=args.arch,
-                    bittorrent=args.bittorrent, platform=args.platform)
-        return
+    elif args.download:
+        if not hb.download(name=args.download,
+                           path=args.path,
+                           type=args.type,
+                           arch=args.arch,
+                           bittorrent=args.bittorrent,
+                           platform=args.platform):
+            return 1
 
-    if args.install:
+    elif args.install:
         hb.install(args.install, args.method)
-        return
 
-    if args.uninstall:
+    elif args.uninstall:
         hb.uninstall(args.uninstall, args.method)
-        return
 
 
 def read_config(args):
