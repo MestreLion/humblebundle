@@ -416,7 +416,9 @@ class HumbleBundle(httpbot.HttpBot):
                          type_pref="sh", arch_pref="64")
             installer = download(specs)
             if not installer:
-                return
+                raise HumbleBundleError(
+                    "Could not download installer for game '%s'" % name)
+
             path = osp.join(osp.expanduser("~/.local/opt"),
                             game.get('mojoname', name.split("_", 1)[0].title()))
             execute("chmod +x '%s'" % installer)
@@ -428,7 +430,9 @@ class HumbleBundle(httpbot.HttpBot):
                          type_pref="air", arch_pref="64")
             installer = download(specs)
             if not installer:
-                return
+                raise HumbleBundleError(
+                    "Could not download installer for game '%s'" % name)
+
             adobeair = "/usr/bin/Adobe AIR Application Installer"
             if not osp.isfile(adobeair):
                 self.install('adobeair')
@@ -439,7 +443,8 @@ class HumbleBundle(httpbot.HttpBot):
                          type_pref=None, arch_pref="64")
             archive = download(specs)
             if not archive:
-                return
+                raise HumbleBundleError(
+                    "Could not download installer for game '%s'" % name)
 
             hookdir = osp.join(mydir, "hooks", name)
             hookfile = osp.join(hookdir, "%s.install.hook" % name)
@@ -806,6 +811,7 @@ if __name__ == '__main__':
         pass
     except HumbleBundleError as e:
         log.critical(e)
+        sys.exit(1)
     except Exception as e:
         log.critical(e, exc_info=True)
         sys.exit(1)
