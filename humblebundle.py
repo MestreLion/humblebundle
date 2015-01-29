@@ -421,7 +421,8 @@ class HumbleBundle(httpbot.HttpBot):
             return self.download(name, path=cachedir, **specs)
 
         if not method:
-            raise HumbleBundleError("No install data for '%s', please check '%s'" %
+            raise HumbleBundleError("No install data for '%s', please check '%s'"
+                                    " or use --method" %
                                     (name, self.gamedata))
 
         elif method == "deb":
