@@ -1,14 +1,15 @@
 gamedata.json contains instructions on how to install each Humble Bundle game.
 
 Relevant fields used by install methods are:
-	package:	Name of the installed package. Defaults to HB name [apt, deb]
-	mojoname:	Defines install dir and uninstall script name. Defaults to simplified, titled HB name [mojo]
-			gamename_with_underscores -> Gamename
-	download:	Name (type) of the install file to download. No default value, but favors .deb packages [deb, mojo, custom]
+	package:	Name of the installed package. Defaults to HB name. [apt, deb]
+	mojoname:	Defines install dir and uninstall script name. Defaults to simplified, titled HB name. [mojo]
+				gamename_with_underscores -> Gamename
+	download:	Name (type) of the install file to download. [deb, mojo, custom]
+				No default value, but favors .deb packages.
 	steamid:	Steam AppID of the game [steam]
-	basename:	A "game ID" name that defines install dir, icon name and other settings [custom]
-			Similar in usage to mojoname, defaults to a simplified HB name
-	dirname:	Basename of install path. Defaults to basename [custom]
+	basename:	A "game ID" name that defines install dir, icon name and other settings. [custom]
+				Similar in usage to mojoname, defaults to a simplified HB name
+	dirname:	Basename of install path. Defaults to basename. [custom]
 
 
 Additional info on some games
@@ -56,44 +57,45 @@ mcpixel_android_pc
 	'.tar.gz': standalone .swf inside. The only that runs on Flash and does not require AIR. But zip has no icons.
 
 
-The following games are in SteamOS but are also available in USC.
+The following games are in SteamOS but are also available in Ubuntu Software Center (USC):
 
-HumbleBundle Name	USC Package
------------------	-----------
-amnesia	amnesia
-anomalywarzoneearth_pc	anomaly
-braid	braid
-capsized	capsized
-cavestoryplus	cave-story-plus
-closure	closure
-dustforce	dustforce
-dynamitejack_android_pc	dynamitejack
-edge	edge
-englishcountrytune	english-country-tune
-gratuitousspacebattles	gratuitous-space-battles
-hotlinemiami	hotline-miami-meta
-legendofgrimrock	legend-of-grimrock
-limbo	limbo
-littleinferno	little-inferno-meta
-offspringfling	offspring-fling
-oilrush	oilrush
-organtraildirectorscut	organ-trail
-osmos_android_pc_soundtrack	osmos
-proteus	proteus-meta
-psychonauts	psychonauts
-rochard	rochard
-shank 2	shank2
-shatter	shatter
-snapshot_hib7	snapshot
-solar_android_pc	solar2
-spacechem_android_pc_soundtrack	spacechem
-spaz	spacepiratesandzombies
-spirits_android_pc_soundtrack	spirits
-splice	splice
-stealthbastarddeluxe	stealth-bastard-deluxe-meta
-superhexagon_android_pc	super-hexagon
-supermeatboy_no_soundtrack	supermeatboy
-swordandsworcery	swordandsworcery
-uplink_android_pc_soundtrack	uplink
-wakingmars_android_pc	waking-mars
-worldofgoo_android_pc_soundtrack	worldofgoo
+HumbleBundle Name                      USC Package
+-----------------                      -----------
+amnesia                                amnesia
+anomalywarzoneearth_pc                 anomaly
+braid                                  braid
+capsized                               capsized
+cavestoryplus                          cave-story-plus
+closure                                closure
+dustforce                              dustforce
+dynamitejack_android_pc                dynamitejack
+edge                                   edge
+englishcountrytune                     english-country-tune
+eufloriahd_android_pc_soundtrack       eufloriahd
+gratuitousspacebattles                 gratuitous-space-battles
+hotlinemiami                           hotline-miami-meta
+legendofgrimrock                       legend-of-grimrock
+limbo                                  limbo
+littleinferno                          little-inferno-meta
+offspringfling                         offspring-fling
+oilrush                                oilrush
+organtraildirectorscut                 organ-trail
+osmos_android_pc_soundtrack            osmos
+proteus                                proteus-meta
+psychonauts                            psychonauts
+rochard                                rochard
+shank2                                 shank2
+shatter                                shatter
+snapshot_hib7                          snapshot
+solar_android_pc                       solar2
+spacechem_android_pc_soundtrack        spacechem
+spaz                                   spacepiratesandzombies
+spirits_android_pc_soundtrack          spirits
+splice                                 splice
+stealthbastarddeluxe                   stealth-bastard-deluxe-meta
+superhexagon_android_pc                super-hexagon
+supermeatboy_no_soundtrack             supermeatboy
+swordandsworcery                       swordandsworcery
+uplink_android_pc_soundtrack           uplink
+wakingmars_android_pc                  waking-mars
+worldofgoo_android_pc_soundtrack       worldofgoo
