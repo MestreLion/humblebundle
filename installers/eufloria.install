@@ -1,2 +1,0 @@
-#!/bin/sh
-"$(dirname "$0")"/../humblebundle.py --"${0##*.}" "eufloriahd_android_pc_soundtrack"
