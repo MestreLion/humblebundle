@@ -119,7 +119,7 @@ Adapted from `--help`:
 		                64-bit (amd64, x86_64, etc)
 	  -p|--platform {windows,mac,linux,android,audio,ebook,comedy}
 		                Download platform. Default is 'linux'
-	  -F--server-file FILE
+	  -F|--server-file FILE
 		                Basename of the server file to download. Useful when
 		                no combination of --type, --arch and --platform is
 		                enough to narrow down choices to a single download.
