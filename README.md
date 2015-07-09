@@ -40,7 +40,7 @@ Just clone the repository and optionally symlink the main script from somewhere 
 	git clone https://github.com/MestreLion/humblebundle.git
 
 	mkdir -p ~/.local/bin
-	ln -s ~/some/dir/humblebundle.py ~/.local/bin/humblebundle
+	ln -s ~/some/dir/humblebundle/humblebundle.py ~/.local/bin/humblebundle
 	echo 'PATH=$HOME/.local/bin:$PATH' >> ~/.profile  # or ~/.bashrc
 
 To use as a python library, also add the repository directory to your `$PYTHONPATH` environment.
@@ -157,7 +157,7 @@ Examples and sample output:
 
 Authenticating (only needed once, it stores credentials in keyring):
 
-	$ humblebundle --username 'user@gmai.com' --password '1234' --update --list
+	$ humblebundle --username 'user@gmail.com' --password '1234' --update --list
 
 
 Show bundle and game info:
@@ -263,9 +263,9 @@ Patches are welcome! Fork, hack, request pull! Here is my current to-do list:
 
 - **Install**: create a decent `setup.py`, possibly uploading to Pypi
 
-- **Classes**: convert the games and bundles dictionaries to classes with attributes and methods. `HumbleBundle.get_game()` would return a `Game` instance, methods `.install()`, `.download()` etc would be there and not on the "main" class.
+- **Classes**: convert the games and bundles dictionaries to classes with attributes and methods. `HumbleBundle.get_game()` would return a `Game` instance, methods `.install()`, `.download()` etc would be there and not on the "main" HumbleBundle class.
 
-If you find a bug or have any enhacement request, please to open a [new issue](https://github.com/MestreLion/humblebundle/issues/new)
+If you find a bug or have any enhancement request, please to open a [new issue](https://github.com/MestreLion/humblebundle/issues/new)
 
 
 Written by
