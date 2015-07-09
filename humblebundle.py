@@ -146,9 +146,9 @@ class HumbleBundle(httpbot.HttpBot):
         self.games   = {}
 
         # Get the keys
-        log.info("Retrieving keys from '%s/home'", self.url)
-        match = re.search(r'^\s*new window.Gamelist\s*\(.*,\s*gamekeys\s*:\s*(\[.*\])',
-                          self.get('/home').read(), re.MULTILINE)
+        log.info("Retrieving keys from '%s/home/keys'", self.url)
+        match = re.search(r'^.*gamekeys\s*=\s*(\[.*\])',
+                          self.get('/home/keys').read(), re.MULTILINE)
         if not match:
             raise HumbleBundleError("GameKeys list not found")
 
