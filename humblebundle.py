@@ -713,7 +713,8 @@ def main(argv=None):
         hb.uninstall(args.uninstall, args.method)
 
     else:
-        parser.print_usage()
+        if not args.update:
+            parser.print_usage()
 
 
 def read_config(args):
