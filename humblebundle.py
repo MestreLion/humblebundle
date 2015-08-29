@@ -629,7 +629,7 @@ def main(argv=None):
     args, parser = parseargs(argv)
     logging.basicConfig(level=getattr(logging, args.loglevel.upper(), None),
                         format='%(asctime)s\t%(levelname)-8s\t%(message)s')
-
+    log.debug(args)
     config = read_config(args)
 
     username = args.username or config['username'] or HB_USERNAME
@@ -641,8 +641,12 @@ def main(argv=None):
     if args.update:
         hb.update()
 
-    if args.list:
-        for game in sorted(hb.games.keys()):
+    if args.list is not None:
+        if args.list is True:
+            games = hb.games.keys()
+        else:
+            games = (_ for _ in hb.games.keys() if re.search(args.list, _))
+        for game in sorted(games):
             print "%s" % game
 
     elif args.show:
@@ -780,7 +784,7 @@ def parseargs(argv=None):
                         help="Account _simpleauth_sess cookie")
 
     parser.add_argument('--download', '-d', dest='download', metavar="GAME",
-                        help="Name of the game to download. See --list")
+                        help="Download the selected game")
 
     parser.add_argument('--type', '-t', dest='type', metavar="NAME",
                         help="Type (name) of the download, for example '.deb', 'mojo', 'flash', etc")
@@ -809,8 +813,9 @@ def parseargs(argv=None):
     parser.add_argument('--update', '-u', dest='update', default=False, action="store_true",
                         help="Fetch all games and bundles data from the server, rebuilding the cache")
 
-    parser.add_argument('--list', '-l', dest='list', default=False, action="store_true",
-                        help="List all available Games (Products), including Soundtracks and eBooks")
+    parser.add_argument('--list', '-l', dest='list', const=True, nargs='?', metavar="REGEX",
+                        help="List all available Games (Products), including Soundtracks and eBooks,"
+                            " optionally filtered by REGEX")
 
     parser.add_argument('--list-bundles', '-L', dest='list_bundles', default=False, action="store_true",
                         help="List all available Bundles (Purchases), "
