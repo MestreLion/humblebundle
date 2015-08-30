@@ -1,0 +1,51 @@
+#!/bin/bash
+
+dir=/opt/machinarium
+
+reslist=(1280x800 1280x960 1600x900 1440x900)
+supported=
+changed=
+
+{
+read -r display
+while read -r res; do
+	if [[ "$res" ]]; then
+		supported+="$res"$'\n'
+	fi
+	current=$res
+done
+} < <(xrandr | awk '
+active && $1 ~ /^[0-9]+x[0-9]+$/ {
+	print $1
+}
+active && $0 ~ /\*/ {
+	current=$1
+}
+active && $2 ~ /connected$/ {
+	exit
+}
+$2 == "connected" && $3 ~ /^[0-9]/ {
+	active=1
+	print $1
+}
+END {
+	print current
+}
+')
+
+if [[ "$display" && "$current" ]]; then
+	for res in "${reslist[@]}"; do
+		if grep -q "$res" <<< "$supported"; then
+			xrandr --output "$display" --mode "$res"
+			changed=1
+			break
+		fi
+	done
+fi
+
+cd "$dir"
+"$dir"/Machinarium
+
+if [[ "$display" && "$current" && "$changed" ]]; then
+	xrandr --output "$display" --mode "$current"
+fi
