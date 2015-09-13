@@ -1,4 +1,4 @@
-#!/bin/bash -eu
+#!/bin/bash -e
 
 # Custom install hook for Humble Bundle game Doodle God
 
@@ -106,7 +106,7 @@ cat > "$desktop" <<-EOF
 	Version=1.0
 	Type=Application
 	Name=${gamename}
-	Comment=Be a God! Combine elements to create new ones, learn something new for you, rule over an entire imaginary World!
+	Comment=Be a God!
 	Categories=Game;
 	Terminal=false
 	StartupNotify=true
