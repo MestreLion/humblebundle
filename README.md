@@ -89,9 +89,10 @@ Adapted from `--help`:
 
 
 	Commands:
-	  -l|--list
+	  -l|--list [REGEX]
 		                List all available Games (Products), including
-		                Soundtracks and eBooks
+		                Soundtracks and eBooks, optionally filtering
+		                by REGEX (Regular Expression)
 	  -L|--list-bundles
 		                List all available Bundles (Purchases), including
 		                Store Front (single product) purchases
@@ -162,7 +163,6 @@ Authenticating (only needed once, it stores credentials in keyring):
 
 Show bundle and game info:
 
-
 	$ humblebundle --show-bundle androidbundle5
 
 	Bundle    : androidbundle5
@@ -185,6 +185,13 @@ Show bundle and game info:
 		Super Hexagon	[superhexagon_android_pc]
 		Super Hexagon	[superhexagon_asm]
 		Superbrothers: Sword & Sworcery EP	[swordandsworcery_android_pc_soundtrack]
+
+
+	$ humblebundle --list solar
+
+	solar_android_pc
+	solarflux
+	solarflux_android
 
 
 	$ humblebundle --show solar_android_pc
