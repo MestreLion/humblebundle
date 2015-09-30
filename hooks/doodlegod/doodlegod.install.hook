@@ -30,8 +30,7 @@ echo "Installing $gamename"
 mkdir -p "$dir"
 
 # Extract archive
-chmod +x "$archive"
-"$archive" --noexec --target "$dir"
+sh -- "$archive" --noexec --target "$dir"
 
 # DoodleGod was compiled using glibc 2.17, but Ubuntu 12.04 uses glibc 2.15
 # There's a workaround for that particular distro and release (and glibc):
