@@ -793,91 +793,82 @@ def parseargs(argv=None):
         description="Humble Bundle Manager",)
 
     default = "warn"
-    parser.add_argument('--loglevel', '-g', dest='loglevel',
+    parser.add_argument('-g', '--loglevel', dest='loglevel',
                         default=default, choices=['debug', 'info', 'warn',
                                                   'error', 'critical'],
                         help="set logging level, default is '%s'" % default)
-    parser.add_argument('--debug', '-D', dest='loglevel',
+    parser.add_argument('-D', '--debug', dest='loglevel',
                         action="store_const", const="debug",
                         help="alias for --loglevel debug")
-
-    parser.add_argument('--username', '-U', dest='username',
-                        help="Account login, the user's email")
-
-    parser.add_argument('--password', '-P', dest='password',
-                        help="Account password")
-
-    parser.add_argument('--auth', '-A', dest='auth',
-                        help="Account _simpleauth_sess cookie")
-
-    parser.add_argument('--download', '-d', dest='download', metavar="GAME",
-                        help="Download the selected game")
-
-    parser.add_argument('--type', '-t', dest='type', metavar="NAME",
-                        help="Type (name) of the download,"
-                            " for example '.deb', 'mojo', 'flash', etc")
-
-    parser.add_argument('--arch', '-a', dest='arch', choices=['32', '64'],
-                        help="Download architecture: 32-bit (also known as i386)"
-                            " or 64-bit (amd64, x86_64, etc)")
-
-    default = "linux"
-    parser.add_argument('--platform', '-p', dest='platform',
-                        default=default,
-                        choices=['windows', 'mac', 'linux', 'android', 'audio',
-                                 'ebook', 'comedy'],
-                        help="Download platform. Default is '%s'" % default)
-
-    parser.add_argument('--server-file', '-F', dest='serverfile', metavar="FILE",
-                        help="Basename of the server file to download."
-                            " Useful when no combination of --type, --arch"
-                            " and --platform is enough to narrow down choices"
-                            " to a single download.")
-
-    parser.add_argument('--bittorrent', '-b', dest='bittorrent',
-                        default=False, action="store_true",
-                        help="Download bittorrent file instead of direct download")
-
-    parser.add_argument('--path', '-f', dest='path',
-                        help="Path to download. If PATH is a directory,"
-                            " default download basename will be used."
-                            " By if omitted, download to current directory.")
-
-    parser.add_argument('--update', '-u', dest='update',
+    parser.add_argument('-u', '--update', dest='update',
                         default=False, action="store_true",
                         help="Fetch all games and bundles data from the server,"
                             " rebuilding the cache")
 
-    parser.add_argument('--list', '-l', dest='list',
+    group = parser.add_argument_group("Login Options")
+    group.add_argument('-U', '--username', dest='username',
+                        help="Account login, the user's email")
+    group.add_argument('-P', '--password', dest='password',
+                        help="Account password")
+    group.add_argument('-A', '--auth', dest='auth',
+                        help="Account _simpleauth_sess cookie value")
+
+    group = parser.add_argument_group("Commands")
+    group.add_argument('-l', '--list', dest='list',
                         const=True, nargs='?', metavar="REGEX",
                         help="List all available Games (Products),"
                             " including Soundtracks and eBooks,"
                             " optionally filtered by REGEX")
-
-    parser.add_argument('--list-bundles', '-L', dest='list_bundles',
+    group.add_argument('-L', '--list-bundles', dest='list_bundles',
                         default=False, action="store_true",
                         help="List all available Bundles (Purchases), "
                             "including Store Front (single product) purchases")
-
-    parser.add_argument('--show', '-s', dest='show', metavar="GAME",
+    group.add_argument('-s', '--show', dest='show', metavar="GAME",
                         help="Show all info about selected game")
-
-    parser.add_argument('--show-bundle', '-S', dest='show_bundle',
+    group.add_argument('-S', '--show-bundle', dest='show_bundle',
                         metavar="BUNDLE",
                         help="Show all info about selected bundle")
+    group.add_argument('-d', '--download', dest='download', metavar="GAME",
+                        help="Download the selected game")
+    group.add_argument('-i', '--install', dest='install', metavar="GAME",
+                        help="Install selected game")
+    group.add_argument('-I', '--uninstall', dest='uninstall', metavar="GAME",
+                        help="Uninstall selected game")
 
-    parser.add_argument('--json', '-j', dest='json',
+    group = parser.add_argument_group("Show Options")
+    group.add_argument('-j', '--json', dest='json',
                         default=False, action="store_true",
                         help="Output --show/--show-bundle in machine-readable,"
                             " JSON format")
 
-    parser.add_argument('--install', '-i', dest='install', metavar="GAME",
-                        help="Install selected game")
+    group = parser.add_argument_group("Download Options")
+    group.add_argument('-t', '--type', dest='type', metavar="NAME",
+                        help="Type (name) of the download,"
+                            " for example '.deb', 'mojo', 'flash', etc")
+    group.add_argument('-a', '--arch', dest='arch', choices=['32', '64'],
+                        help="Download architecture: 32-bit (also known as i386)"
+                            " or 64-bit (amd64, x86_64, etc)")
+    default = "linux"
+    group.add_argument('-p', '--platform', dest='platform',
+                        default=default,
+                        choices=['windows', 'mac', 'linux', 'android', 'audio',
+                                 'ebook', 'comedy'],
+                        help="Download platform. Default is '%s'" % default)
+    group.add_argument('-F', '--server-file', dest='serverfile', metavar="FILE",
+                        help="Basename of the server file to download."
+                            " Useful when no combination of --type, --arch"
+                            " and --platform is enough to narrow down choices"
+                            " to a single download.")
+    group.add_argument('-b', '--bittorrent', dest='bittorrent',
+                        default=False, action="store_true",
+                        help="Download bittorrent file instead of direct download")
+    group.add_argument('-f', '--path', dest='path',
+                        help="Path to download. If PATH is a directory,"
+                            " default download basename will be used."
+                            " If omitted, download to current directory.")
 
-    parser.add_argument('--uninstall', '-I', dest='uninstall', metavar="GAME",
-                        help="Uninstall selected game")
-
-    parser.add_argument('--method', '-m', dest='method',
+    group = parser.add_argument_group("Install Options")
+    group.add_argument('-m', '--method', dest='method',
                         choices=['custom', 'deb', 'apt', 'mojo', 'air', 'steam'],
                         help="Use this method instead of the default"
                             " for (un-)installing a game")
