@@ -19,7 +19,7 @@
 #    along with this program. See <http://www.gnu.org/licenses/gpl.html>
 
 # TODO:
-# - INI-format config file for non-auth settings like arch-pref, debug level, etc
+# - INI-format config file for non-auth settings like arch-pref, debug level
 # - Log to file, with debug or info level
 
 HB_USERNAME = ""
@@ -70,7 +70,9 @@ class HumbleBundle(httpbot.HttpBot):
         self.password = password
         self.auth     = auth
 
-        self.cookiejar = cookielib.MozillaCookieJar(filename=osp.join(configdir, "cookies.txt"))
+        self.cookiejar = cookielib.MozillaCookieJar(
+                            filename=osp.join(configdir,
+                                              "cookies.txt"))
         try:
             self.cookiejar.load()
         except (IOError, cookielib.LoadError) as e:
@@ -102,8 +104,10 @@ class HumbleBundle(httpbot.HttpBot):
                                            cookiejar=self.cookiejar,
                                            debug=debug)
 
-        self.bundles = {}  # "purchases" in website. May not be technically a bundle, like Store Purchases
-        self.games   = {}  # "subproducts" in json. May not be a game, like Soundtracks and eBooks
+        # "purchases" in the website. May be non-bundle like Store Purchases
+        self.bundles = {}
+        # "subproducts" in json. May be not a game, like Soundtracks and eBooks
+        self.games   = {}
 
         # Load bundles and games
         try:
@@ -111,7 +115,9 @@ class HumbleBundle(httpbot.HttpBot):
                 with open(osp.join(configdir, "games.json")) as fp2:
                     self.bundles = json.load(fp1)
                     self.games   = json.load(fp2)
-                    log.info("Loaded %d games from %d bundles" % (len(self.games), len(self.bundles)))
+                    log.info("Loaded %d games from %d bundles",
+                             len(self.games),
+                             len(self.bundles))
             self._merge()
         except IOError:
             self.update()
@@ -141,7 +147,7 @@ class HumbleBundle(httpbot.HttpBot):
 
 
     def update(self):
-        ''' Fetch all bundles and games from the server, rebuilding the cache '''
+        '''Fetch all bundles and games from the server, rebuilding the cache'''
         self.bundles = {}
         self.games   = {}
 
@@ -165,7 +171,9 @@ class HumbleBundle(httpbot.HttpBot):
             self.bundles.update(bundle)
             self.games.update(games)
 
-        log.info("Updated %d games from %d bundles" % (len(self.games), len(self.bundles)))
+        log.info("Updated %d games from %d bundles",
+                 len(self.games),
+                 len(self.bundles))
         self._merge()
         self._save_data()
 
@@ -278,7 +286,8 @@ class HumbleBundle(httpbot.HttpBot):
         print "Downloading '%s' [%s]\t%s" % (
             game['human_name'], game['machine_name'], self._download_info(d))
         try:
-            return super(HumbleBundle, self).download(url, path, d.get('md5', '').lower())
+            return super(HumbleBundle, self).download(url, path,
+                                                      d.get('md5', '').lower())
         except httpbot.urllib2.HTTPError as e:
             # Unauthorized (most likely outdated download URL) or something else?
             if not e.code == 403:
@@ -310,17 +319,22 @@ class HumbleBundle(httpbot.HttpBot):
                     if not download.get('url', ''):
                         continue
                     if (serverfile and
-                        serverfile.lower() != self._download_basename(download).lower()):
+                        serverfile.lower() !=
+                            self._download_basename(download).lower()):
                         continue
-                    if type and type.lower() not in download.get('name', '').lower():
+                    if (type and
+                        type.lower() not in download.get('name','').lower()):
                         continue
                     if not download.get('arch', ''):
-                        if re.search('(?:32|64)[- ]?bit|i386|x86_64', download.get('name','')):
+                        if re.search('(?:32|64)[- ]?bit|i386|x86_64',
+                                     download.get('name','')):
                             if '64' in download['name']:
                                 download['arch'] = "64"
                             else:
                                 download['arch'] = "32"
-                    if arch and download.get('arch', '') and download['arch'] != arch:
+                    if (arch and
+                        download.get('arch', '') and
+                        download['arch'] != arch):
                         continue
 
                     candidates.append(download)
@@ -384,9 +398,11 @@ class HumbleBundle(httpbot.HttpBot):
                     return finalists[0]
 
         # Give up
-        log.error("Too many download candidates for '%s' [%s]. Improve criteria to narrow it down.%s",
+        log.error("Too many download candidates for '%s' [%s]."
+                  " Improve criteria to narrow it down.%s",
                   game['human_name'], game['machine_name'],
-                  "".join(["\n\t%s" % self._download_info(x) for x in finalists or candidates]))
+                  "".join(["\n\t%s" % self._download_info(x)
+                           for x in finalists or candidates]))
         #log.debug("\n%s", json.dumps(finalists or candidates, indent=2))
         return
 
@@ -455,7 +471,8 @@ class HumbleBundle(httpbot.HttpBot):
             path = osp.join(osp.expanduser("~/.local/opt"),
                             game.get('mojoname', name.split("_", 1)[0].title()))
             execute("chmod +x '%s'" % installer)
-            execute("'%s' -- --destination '%s' --noreadme --noprompt --nooptions --i-agree-to-all-licenses" %
+            execute("'%s' -- --destination '%s' --noreadme --noprompt"
+                    " --nooptions --i-agree-to-all-licenses" %
                     (installer, path))
 
         elif method == "air":
@@ -505,7 +522,8 @@ class HumbleBundle(httpbot.HttpBot):
         popenargs = {}
 
         if not method:
-            raise HumbleBundleError("No install data for '%s', please check '%s'" %
+            raise HumbleBundleError("No install data for '%s',"
+                                    " please check '%s'" %
                                     (name, self.gamedata))
 
         elif method in ["deb", "apt", "air"]:
@@ -651,11 +669,13 @@ def main(argv=None):
 
     elif args.show:
         def print_key(key, alias=None, obj=None):
-            print "%-10s: %s" % (alias or key, getattr(obj or game, 'get')(key.lower(), ''))
+            print "%-10s: %s" % (alias or key,
+                                 getattr(obj or game, 'get')(key.lower(), ''))
 
         game = hb.get_game(args.show)
         if args.json:
-            print json.dumps(game, indent=2, separators=(',', ': '), sort_keys=True)
+            print json.dumps(game, indent=2, separators=(',', ': '),
+                             sort_keys=True)
             return
         print_key('machine_name', 'Game')
         print_key('human_name', 'Name')
@@ -664,10 +684,12 @@ def main(argv=None):
         print_key('', 'Bundles')
         for bundle in hb.bundles.itervalues():
             if game.get('machine_name', '') in bundle.get('games', []):
-                print "\t%s [%s]" % (bundle['human_name'], bundle['machine_name'])
+                print "\t%s [%s]" % (bundle['human_name'],
+                                     bundle['machine_name'])
         print_key('', 'Downloads')
         platform_prev = None
-        for download in sorted(game.get('downloads', []), key=lambda k: k['platform']):
+        for download in sorted(game.get('downloads', []),
+                               key=lambda k: k['platform']):
             platform = download.get('platform', '')
             if platform_prev != platform:
                 print "\t%s" % platform
@@ -681,11 +703,13 @@ def main(argv=None):
 
     elif args.show_bundle:
         def print_key(key, alias=None, obj=None):
-            print "%-10s: %s" % (alias or key, getattr(obj or bundle, 'get')(key.lower(), ''))
+            print "%-10s: %s" % (alias or key,
+                                 getattr(obj or bundle, 'get')(key.lower(), ''))
 
         bundle = hb.get_bundle(args.show_bundle)
         if args.json:
-            print json.dumps(bundle, indent=2, separators=(',', ': '), sort_keys=True)
+            print json.dumps(bundle, indent=2, separators=(',', ': '),
+                             sort_keys=True)
             return
         print_key('machine_name', 'Bundle')
         print_key('human_name', 'Name')
@@ -698,7 +722,8 @@ def main(argv=None):
 
     elif args.list_bundles:
         for bundle in sorted(hb.bundles.items()):
-            print ("%s\t%s" % (bundle[1]['machine_name'], bundle[1]['human_name'])).encode('utf-8')
+            print ("%s\t%s" % (bundle[1]['machine_name'],
+                               bundle[1]['human_name'])).encode('utf-8')
 
     elif args.download:
         if not hb.download(name=args.download,
@@ -731,7 +756,8 @@ def read_config(args):
     if keyring:
         log.debug("Reading credentials from keyring")
         try:
-            username, password = (keyring.get_password(myname, '').split('\n') + ['\n'])[:2]
+            username, password = (keyring.get_password(myname, '').split('\n') +
+                                  ['\n'])[:2]
         except IOError as e:
             log.error(e)
     else:
@@ -768,11 +794,12 @@ def parseargs(argv=None):
 
     default = "warn"
     parser.add_argument('--loglevel', '-g', dest='loglevel',
-                        default=default, choices=['debug', 'info', 'warn', 'error', 'critical'],
+                        default=default, choices=['debug', 'info', 'warn',
+                                                  'error', 'critical'],
                         help="set logging level, default is '%s'" % default)
-    parser.add_argument('--debug', '-D', dest='loglevel', action="store_const", const="debug",
+    parser.add_argument('--debug', '-D', dest='loglevel',
+                        action="store_const", const="debug",
                         help="alias for --loglevel debug")
-
 
     parser.add_argument('--username', '-U', dest='username',
                         help="Account login, the user's email")
@@ -787,7 +814,8 @@ def parseargs(argv=None):
                         help="Download the selected game")
 
     parser.add_argument('--type', '-t', dest='type', metavar="NAME",
-                        help="Type (name) of the download, for example '.deb', 'mojo', 'flash', etc")
+                        help="Type (name) of the download,"
+                            " for example '.deb', 'mojo', 'flash', etc")
 
     parser.add_argument('--arch', '-a', dest='arch', choices=['32', '64'],
                         help="Download architecture: 32-bit (also known as i386)"
@@ -795,40 +823,53 @@ def parseargs(argv=None):
 
     default = "linux"
     parser.add_argument('--platform', '-p', dest='platform',
-                        default=default, choices=['windows', 'mac', 'linux', 'android', 'audio', 'ebook', 'comedy'],
+                        default=default,
+                        choices=['windows', 'mac', 'linux', 'android', 'audio',
+                                 'ebook', 'comedy'],
                         help="Download platform. Default is '%s'" % default)
 
     parser.add_argument('--server-file', '-F', dest='serverfile', metavar="FILE",
                         help="Basename of the server file to download."
-                            " Useful when no combination of --type, --arch and --platform is enough"
-                            " to narrow down choices to a single download.")
+                            " Useful when no combination of --type, --arch"
+                            " and --platform is enough to narrow down choices"
+                            " to a single download.")
 
-    parser.add_argument('--bittorrent', '-b', dest='bittorrent', default=False, action="store_true",
+    parser.add_argument('--bittorrent', '-b', dest='bittorrent',
+                        default=False, action="store_true",
                         help="Download bittorrent file instead of direct download")
 
     parser.add_argument('--path', '-f', dest='path',
-                        help="Path to download. If PATH is a directory, default download basename will be used."
+                        help="Path to download. If PATH is a directory,"
+                            " default download basename will be used."
                             " By if omitted, download to current directory.")
 
-    parser.add_argument('--update', '-u', dest='update', default=False, action="store_true",
-                        help="Fetch all games and bundles data from the server, rebuilding the cache")
+    parser.add_argument('--update', '-u', dest='update',
+                        default=False, action="store_true",
+                        help="Fetch all games and bundles data from the server,"
+                            " rebuilding the cache")
 
-    parser.add_argument('--list', '-l', dest='list', const=True, nargs='?', metavar="REGEX",
-                        help="List all available Games (Products), including Soundtracks and eBooks,"
+    parser.add_argument('--list', '-l', dest='list',
+                        const=True, nargs='?', metavar="REGEX",
+                        help="List all available Games (Products),"
+                            " including Soundtracks and eBooks,"
                             " optionally filtered by REGEX")
 
-    parser.add_argument('--list-bundles', '-L', dest='list_bundles', default=False, action="store_true",
+    parser.add_argument('--list-bundles', '-L', dest='list_bundles',
+                        default=False, action="store_true",
                         help="List all available Bundles (Purchases), "
                             "including Store Front (single product) purchases")
 
     parser.add_argument('--show', '-s', dest='show', metavar="GAME",
                         help="Show all info about selected game")
 
-    parser.add_argument('--show-bundle', '-S', dest='show_bundle', metavar="BUNDLE",
+    parser.add_argument('--show-bundle', '-S', dest='show_bundle',
+                        metavar="BUNDLE",
                         help="Show all info about selected bundle")
 
-    parser.add_argument('--json', '-j', dest='json', default=False, action="store_true",
-                        help="Output --show/--show-bundle in machine-readable, JSON format")
+    parser.add_argument('--json', '-j', dest='json',
+                        default=False, action="store_true",
+                        help="Output --show/--show-bundle in machine-readable,"
+                            " JSON format")
 
     parser.add_argument('--install', '-i', dest='install', metavar="GAME",
                         help="Install selected game")
@@ -836,8 +877,10 @@ def parseargs(argv=None):
     parser.add_argument('--uninstall', '-I', dest='uninstall', metavar="GAME",
                         help="Uninstall selected game")
 
-    parser.add_argument('--method', '-m', dest='method', choices=['custom', 'deb', 'apt', 'mojo', 'air', 'steam'],
-                        help="Use this method instead of the default for (un-)installing a game")
+    parser.add_argument('--method', '-m', dest='method',
+                        choices=['custom', 'deb', 'apt', 'mojo', 'air', 'steam'],
+                        help="Use this method instead of the default"
+                            " for (un-)installing a game")
 
     args = parser.parse_args(argv)
     args.debug = args.loglevel=='debug'
