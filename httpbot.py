@@ -130,13 +130,13 @@ class HttpBot(object):
             if not md5sum:
                 return path
 
-            hash = filehash(path, hashlib.md5())
-            if md5sum == hash:
+            realhash = filehash(path, hashlib.md5())
+            if md5sum == realhash:
                 log.debug("Download MD5 match: %s", md5sum)
                 return path
             else:
                 log.warn("Download MD5 does not match - file is likely corrupt.")
-                log.debug("Expected and downloaded MD5:\n%s\n%s", md5sum, hash)
+                log.debug("Expected and downloaded MD5:\n%s\n%s", md5sum, realhash)
 
     def quote(self, text):
         """ Quote a text for URL usage, similar to urllib.quote_plus.

@@ -240,12 +240,12 @@ class HumbleBundle(httpbot.HttpBot):
 
 
     def download(self, name, path=None, bittorrent=False,
-                 type=None, arch=None, platform=None, serverfile=None,
+                 dtype=None, arch=None, platform=None, serverfile=None,
                  type_pref=".deb", arch_pref="64",
                  retry=True):
 
         game = self.get_game(name)
-        d = self._choose_download(name=name, type=type, arch=arch,
+        d = self._choose_download(name=name, dtype=dtype, arch=arch,
                                   platform=platform, serverfile=serverfile,
                                   type_pref=type_pref, arch_pref=arch_pref)
         if not d:
@@ -274,7 +274,7 @@ class HumbleBundle(httpbot.HttpBot):
                                             {}).get('gamekey', ''))
             return self.download(name=name,
                                  path=path,
-                                 type=type,
+                                 dtype=dtype,
                                  arch=arch,
                                  platform=platform,
                                  bittorrent=bittorrent,
@@ -305,7 +305,7 @@ class HumbleBundle(httpbot.HttpBot):
         return "'%s'%s\t%s\t%s" % (d['name'], a, d['human_size'],
                                    self._download_basename(d))
 
-    def _choose_download(self, name, type=None, arch=None, platform=None,
+    def _choose_download(self, name, dtype=None, arch=None, platform=None,
                          serverfile=None, type_pref=None, arch_pref=None):
 
         game = self.get_game(name)
@@ -322,8 +322,8 @@ class HumbleBundle(httpbot.HttpBot):
                         serverfile.lower() !=
                             self._download_basename(download).lower()):
                         continue
-                    if (type and
-                        type.lower() not in download.get('name','').lower()):
+                    if (dtype and
+                        dtype.lower() not in download.get('name','').lower()):
                         continue
                     if not download.get('arch', ''):
                         if re.search('(?:32|64)[- ]?bit|i386|x86_64',
@@ -345,7 +345,7 @@ class HumbleBundle(httpbot.HttpBot):
         if len(candidates) == 0:
             log.error("No valid downloads for game '%s' [%s]\n\t criteria %r",
                       game['human_name'], game['machine_name'],
-                      {'type':type,
+                      {'dtype':dtype,
                        'arch':arch,
                        'serverfile':serverfile,
                        'platform':platform})
@@ -353,14 +353,14 @@ class HumbleBundle(httpbot.HttpBot):
 
         log.debug("Many download candidates for '%s' [%s]\n\tcriteria %r:\n%s",
                   game['human_name'], game['machine_name'],
-                  {'type':type,
+                  {'dtype':dtype,
                    'arch':arch,
                    'serverfile':serverfile,
                    'platform':platform},
                   json.dumps(candidates, indent=2))
 
         # Try type (download name) preference
-        if not type and type_pref:
+        if not dtype and type_pref:
             for download in candidates:
                 if type_pref.lower() in download.get('name', '').lower():
                     finalists.append(download)
@@ -384,15 +384,15 @@ class HumbleBundle(httpbot.HttpBot):
             return finalists[0]
 
         # Try type again, with more restrictive matching
-        if type:
+        if dtype:
             for rule in ('starts', 'is'):
                 if finalists:
                     candidates = finalists[:]
                     finalists = []
                 for download in candidates:
                     name = download.get('name', '').lower()
-                    if ((rule == 'is'     and name == type.lower()) or
-                        (rule == 'starts' and name.startswith(type.lower()))):
+                    if ((rule == 'is'     and name == dtype.lower()) or
+                        (rule == 'starts' and name.startswith(dtype.lower()))):
                         finalists.append(download)
                 if len(finalists) == 1:
                     return finalists[0]
@@ -433,7 +433,7 @@ class HumbleBundle(httpbot.HttpBot):
         def download(specs):
             for spec in specs:
                 specs[spec] = game.get(spec, specs[spec])
-            specs['type'] = specs.pop('download', None)
+            specs['dtype'] = specs.pop('download', None)
             return self.download(name, path=cachedir, **specs)
 
         if not method:
@@ -728,7 +728,7 @@ def main(argv=None):
     elif args.download:
         if not hb.download(name=args.download,
                            path=args.path,
-                           type=args.type,
+                           dtype=args.type,
                            arch=args.arch,
                            bittorrent=args.bittorrent,
                            platform=args.platform,
