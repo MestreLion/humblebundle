@@ -792,14 +792,13 @@ def parseargs(argv=None):
     parser = argparse.ArgumentParser(
         description="Humble Bundle Manager",)
 
-    default = "warn"
-    parser.add_argument('-g', '--loglevel', dest='loglevel',
-                        default=default, choices=['debug', 'info', 'warn',
-                                                  'error', 'critical'],
-                        help="set logging level, default is '%s'" % default)
+    parser.add_argument('-v', '--verbose', dest='loglevel',
+                        action="store_const",
+                        const="info", default="warn",
+                        help="Output informative messages")
     parser.add_argument('-D', '--debug', dest='loglevel',
                         action="store_const", const="debug",
-                        help="alias for --loglevel debug")
+                        help="Output debug information")
     parser.add_argument('-u', '--update', dest='update',
                         default=False, action="store_true",
                         help="Fetch all games and bundles data from the server,"
