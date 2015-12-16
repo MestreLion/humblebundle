@@ -64,6 +64,7 @@ class HumbleBundle(httpbot.HttpBot):
 
     name = "Humble Bundle"
     url = "https://www.humblebundle.com"
+    auth_urls = ("/login",)
 
     def __init__(self, username=None, password=None, auth=None, debug=False):
         self.username = username
@@ -595,9 +596,8 @@ class HumbleBundle(httpbot.HttpBot):
         def urlabspath(url):
             return urlsplit(urljoin('/', url)).path.lower()
 
-        def save_cookies(url, res):
-            if (urlabspath(url) == "/login" or
-                res.info().has_key('Set-Cookie')):
+        def save_cookies(res, force=False):
+            if force or res.info().has_key('Set-Cookie'):
                 log.debug("Saving cookies to '%s'", self.cookiejar.filename)
                 try:
                     self.cookiejar.save()
@@ -606,38 +606,61 @@ class HumbleBundle(httpbot.HttpBot):
                     log.error("Error saving cookies: %s", e)
 
         try:
+            requested_url = urlabspath(url)
             res = super(HumbleBundle, self).get(url, postdata)
-            save_cookies(url, res)
-            # Was it successful? (intended to be /login or not redirected to /login)
-            if (    urlabspath(       url  ) == "/login" or
-                not urlabspath(res.geturl()) == '/login'):
+            save_cookies(res)
+
+            # Was it successful? That is, not redirected TO an authorization
+            # page that requires special handling.
+            current_url = urlabspath(res.geturl())
+            if (current_url == requested_url or
+                current_url not in self.auth_urls):
                 return res
         except httpbot.urllib2.HTTPError as e:
             # Unauthorized (requires login) or something else?
             if not e.code == 401:
                 raise
 
+        # Login form
         if not (self.username and self.password):
             raise HumbleBundleError(
                 "Username or password are blank. "
                 "Set with --username and --password and try again")
 
-        log.info("Authenticating at '%s/login'", self.url)
-        res = super(HumbleBundle, self).get("/login",
-                                            {'goto'    : url,
-                                             'username': self.username,
-                                             'password': self.password})
-        save_cookies("/login", res)
+        log.info("Authenticating at '%s/processlogin'", self.url)
 
-        # Was it successfully redirected to the page requested?
-        if urlabspath(res.geturl()) == urlabspath(url):
+        try:
+            # Could also get the token from res.headers.get("Set-Cookie")
+            token = re.search(r"\s+value=['\"]([^'\"]+)['\"]",
+                              re.search(r"(<input\s+[^>]*\s+name\s*=\s*"
+                                        "['\"]_le_csrf_token['\"][^>]*>)",
+                                        res.read()).groups()[0]).groups()[0]
+        except Exception as e:
+            raise HumbleBundleError("Could not retrieve token: %r", e)
+
+        try:
+            res = super(HumbleBundle, self).get("/processlogin",
+                                                {'goto'    : url,
+                                                 'username': self.username,
+                                                 'password': self.password,
+                                                 '_le_csrf_token': token})
+            save_cookies(res, force=True)
+
+        except httpbot.urllib2.HTTPError as e:
+            # 'Bad Request' or 'Forbidden' are expected for wrong passwords
+            if e.code in [400, 403]:
+                raise HumbleBundleError(
+                    "Could not log in. Either username/password are"
+                    " not correct, or a ReCaptcha validation is required."
+                    " Log in using a real browser, inspect the cookies created"
+                    " and provide the value of _simpleauth_sess with --auth")
+            raise
+
+        # Was it already redirected to the page requested?
+        if requested_url == urlabspath(res.geturl()):
             return res
 
-        raise HumbleBundleError(
-            "Could not log in. Either username/password are not correct, "
-            "or a ReCaptcha validation is required. "
-            "Log in using a real browser, inspect the cookies created "
-            "and provide the value of _simpleauth_sess with --auth")
+        return self.get(url, postdata)
 
 
 
