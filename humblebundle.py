@@ -64,9 +64,10 @@ class HumbleBundle(httpbot.HttpBot):
 
     name = "Humble Bundle"
     url = "https://www.humblebundle.com"
-    auth_urls = ("/login",)
+    auth_urls = ("/login", "/user/humbleguard")
 
-    def __init__(self, username=None, password=None, auth=None, debug=False):
+    def __init__(self, username=None, password=None, auth=None, code=None,
+                 debug=False):
         self.username = username
         self.password = password
         self.auth     = auth
@@ -104,6 +105,17 @@ class HumbleBundle(httpbot.HttpBot):
                                            tag=myname,
                                            cookiejar=self.cookiejar,
                                            debug=debug)
+
+        if code:
+            log.info("Validating browser code at '%s/user/humbleguard'",
+                     self.url)
+            try:
+                self.get("/user/humbleguard",
+                               {'goto': "/home",
+                                'qs'  : "",
+                                'code': code.upper()})
+            except httpbot.urllib2.HTTPError as e:
+                raise HumbleBundleError("Incorrect browser verification code")
 
         # "purchases" in the website. May be non-bundle like Store Purchases
         self.bundles = {}
@@ -605,11 +617,11 @@ class HumbleBundle(httpbot.HttpBot):
                 except IOError as e:
                     log.error("Error saving cookies: %s", e)
 
+        requested_url = urlabspath(url)
+        current_url = ""
         try:
-            requested_url = urlabspath(url)
             res = super(HumbleBundle, self).get(url, postdata)
             save_cookies(res)
-
             # Was it successful? That is, not redirected TO an authorization
             # page that requires special handling.
             current_url = urlabspath(res.geturl())
@@ -620,6 +632,12 @@ class HumbleBundle(httpbot.HttpBot):
             # Unauthorized (requires login) or something else?
             if not e.code == 401:
                 raise
+
+        # Humble Guard (Browser Verification Code sent via email)
+        if current_url == "/user/humbleguard":
+            raise HumbleBundleError(
+                    "Browser verification code required."
+                    " Check your email and retry with --code")
 
         # Login form
         if not (self.username and self.password):
@@ -677,7 +695,7 @@ def main(argv=None):
     password = args.password or config['password'] or HB_PASSWORD
     auth     = args.auth                           or HB_AUTH
 
-    hb = HumbleBundle(username, password, auth, debug=args.debug)
+    hb = HumbleBundle(username, password, auth, args.code, debug=args.debug)
 
     if args.update:
         hb.update()
@@ -827,13 +845,15 @@ def parseargs(argv=None):
                         help="Fetch all games and bundles data from the server,"
                             " rebuilding the cache")
 
-    group = parser.add_argument_group("Login Options")
+    group = parser.add_argument_group("Authentication Options")
     group.add_argument('-U', '--username', dest='username',
                         help="Account login, the user's email")
     group.add_argument('-P', '--password', dest='password',
                         help="Account password")
     group.add_argument('-A', '--auth', dest='auth',
                         help="Account _simpleauth_sess cookie value")
+    group.add_argument('-c', '--code',
+                       help="Browser verification code sent by email")
 
     group = parser.add_argument_group("Commands")
     group.add_argument('-l', '--list', dest='list',
