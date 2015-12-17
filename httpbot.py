@@ -42,6 +42,7 @@ class HttpBot(object):
         download a file and cache content. Not to be used directly
     """
     def __init__(self, base_url="", tag="", cookiejar=None, debug=False):
+        self.tag = tag
         hh  = urllib2.HTTPHandler( debuglevel=1 if debug else 0)
         hsh = urllib2.HTTPSHandler(debuglevel=1 if debug else 0)
         cp  = urllib2.HTTPCookieProcessor(cookiejar)
@@ -76,7 +77,8 @@ class HttpBot(object):
         path = os.path.expanduser(path or ".")
         if os.path.isdir(path) or not os.path.basename(path):
             #TODO: Parse Content-Disposition header for filename
-            basename = urllib.unquote(os.path.basename(urlsplit(download.geturl()).path))
+            basename = urllib.unquote(os.path.basename
+                                      (urlsplit(download.geturl()).path))
             path = os.path.join(path, basename)
         log.info("Downloading to %s", path)
 
