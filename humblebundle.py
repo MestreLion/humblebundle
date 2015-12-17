@@ -24,7 +24,6 @@
 
 HB_USERNAME = ""
 HB_PASSWORD = ""
-HB_AUTH = ""
 
 import os
 import os.path as osp
@@ -70,7 +69,6 @@ class HumbleBundle(httpbot.HttpBot):
                  debug=False):
         self.username = username
         self.password = password
-        self.auth     = auth
 
         self.cookiejar = cookielib.MozillaCookieJar(
                             filename=osp.join(configdir,
@@ -85,7 +83,7 @@ class HumbleBundle(httpbot.HttpBot):
             expires = int(auth.split('|')[1]) + 730 * 24 * 60 * 60
             cookie = cookielib.Cookie(version = 0,
                                       name = '_simpleauth_sess',
-                                      value = self.auth,
+                                      value = auth,
                                       port = None,
                                       port_specified = False,
                                       domain = urlsplit(self.url)[1],
@@ -693,9 +691,10 @@ def main(argv=None):
 
     username = args.username or config['username'] or HB_USERNAME
     password = args.password or config['password'] or HB_PASSWORD
-    auth     = args.auth                           or HB_AUTH
 
-    hb = HumbleBundle(username, password, auth, args.code, debug=args.debug)
+    hb = HumbleBundle(username, password,
+                      args.auth, args.code,
+                      debug=args.debug)
 
     if args.update:
         hb.update()
