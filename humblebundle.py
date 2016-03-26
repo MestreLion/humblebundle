@@ -795,11 +795,13 @@ def read_config(args):
     # read
     if keyring:
         log.debug("Reading credentials from keyring")
-        try:
-            username, password = (keyring.get_password(myname, '').split('\n') +
-                                  ['\n'])[:2]
-        except IOError as e:
-            log.error(e)
+        keyringentry = keyring.get_password(myname, '')
+        if keyringentry is not None:
+            try:
+                username, password = (keyringentry.split('\n') +
+                                      ['\n'])[:2]
+            except IOError as e:
+                log.error(e)
     else:
         log.debug("Reading credentials from '%s'" % config)
         try:
