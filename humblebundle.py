@@ -798,7 +798,9 @@ def read_config(args):
         try:
             username, password = (keyring.get_password(myname, '').split('\n') +
                                   ['\n'])[:2]
-        except IOError as e:
+        except AttributeError as e:
+            log.warn("Credentials not found in keyring. First time usage?")
+        except IOError as e:  # keyring sometimes raises this
             log.error(e)
     else:
         log.debug("Reading credentials from '%s'" % config)
@@ -806,7 +808,10 @@ def read_config(args):
             with open(config, 'r') as fd:
                 username, password = (fd.read().splitlines() + ['\n'])[:2]
         except IOError as e:
-            log.error(e)
+            if e.errno == 2:  # No such file or directory
+                log.warn("Credentials file not found. First time usage?")
+            else:
+                log.error(e)
 
     # save
     if args.username or args.password:
