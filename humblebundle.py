@@ -51,10 +51,17 @@ import httpbot
 
 
 log = logging.getLogger(__name__)
-myname = __name__
-mydir = osp.dirname(osp.realpath(__file__))
-cachedir = None
-configdir = None
+
+
+# Defaults are suitable for usage as a library (imported module)
+# They're changed when used as a script to adjust for __name__
+APPNAME   = __name__
+DATADIR   = osp.dirname(osp.realpath(__file__))
+CONFIGDIR = osp.join(xdg.xdg_config_home, APPNAME)
+CACHEDIR  = osp.join(xdg.xdg_cache_home, APPNAME)
+
+
+
 
 class HumbleBundleError(Exception):
     pass
@@ -66,12 +73,21 @@ class HumbleBundle(httpbot.HttpBot):
     auth_urls = ("/login", "/user/humbleguard")
 
     def __init__(self, username=None, password=None, auth=None, code=None,
+                 datadir=None, configdir=None, cachedir=None,
                  debug=False):
         self.username = username
         self.password = password
 
+        self.datadir   = datadir   or DATADIR
+        self.configdir = configdir or CONFIGDIR
+        self.cachedir  = cachedir  or CACHEDIR
+
+        if not os.path.isdir(self.configdir):
+            # Create the config dir as xdg would. Let exceptions bubble up
+            os.makedirs(self.configdir, 0700)
+
         self.cookiejar = cookielib.MozillaCookieJar(
-                            filename=osp.join(configdir,
+                            filename=osp.join(self.configdir,
                                               "cookies.txt"))
         try:
             self.cookiejar.load()
@@ -100,7 +116,7 @@ class HumbleBundle(httpbot.HttpBot):
             self.cookiejar.set_cookie(cookie)
 
         super(HumbleBundle, self).__init__(self.url,
-                                           tag=myname,
+                                           tag=APPNAME,
                                            cookiejar=self.cookiejar,
                                            debug=debug)
 
@@ -122,8 +138,8 @@ class HumbleBundle(httpbot.HttpBot):
 
         # Load bundles and games
         try:
-            with open(osp.join(configdir, "bundles.json")) as fp1:
-                with open(osp.join(configdir, "games.json")) as fp2:
+            with open(osp.join(self.configdir, "bundles.json")) as fp1:
+                with open(osp.join(self.configdir, "games.json")) as fp2:
                     self.bundles = json.load(fp1)
                     self.games   = json.load(fp2)
                     log.info("Loaded %d games from %d bundles",
@@ -136,7 +152,7 @@ class HumbleBundle(httpbot.HttpBot):
 
     def _merge(self):
         # Merge extras
-        extras = osp.join(mydir, "extras.json")
+        extras = osp.join(self.datadir, "extras.json")
         log.debug("Merging extras from %s", extras)
         try:
             with open(extras) as fp:
@@ -146,7 +162,7 @@ class HumbleBundle(httpbot.HttpBot):
             log.warn("Error merging extras: %s", e)
 
         # Merge install instructions
-        self.gamedata = osp.join(mydir, "gamedata.json")
+        self.gamedata = osp.join(self.datadir, "gamedata.json")
         log.debug("Merging games install data from %s", self.gamedata)
         try:
             with open(self.gamedata) as fp:
@@ -191,7 +207,7 @@ class HumbleBundle(httpbot.HttpBot):
 
     def _save_data(self):
         for obj in ['bundles', 'games']:
-            path = osp.join(configdir, "%s.json" % obj)
+            path = osp.join(self.configdir, "%s.json" % obj)
             try:
                 with open(path, 'w') as f:
                     json.dump(getattr(self, obj), f,
@@ -445,7 +461,7 @@ class HumbleBundle(httpbot.HttpBot):
             for spec in specs:
                 specs[spec] = game.get(spec, specs[spec])
             specs['dtype'] = specs.pop('download', None)
-            return self.download(name, path=cachedir, **specs)
+            return self.download(name, path=self.cachedir, **specs)
 
         if not method:
             raise HumbleBundleError("No install data for '%s', please check '%s'"
@@ -507,7 +523,7 @@ class HumbleBundle(httpbot.HttpBot):
                 raise HumbleBundleError(
                     "Could not download installer for game '%s'" % name)
 
-            hookdir = osp.join(mydir, "hooks", name)
+            hookdir = osp.join(self.datadir, "hooks", name)
             hookfile = osp.join(hookdir, "%s.install.hook" % name)
             basename = game.get('basename', name.split("_", 1)[0])
             # FIXME: Make sure basename is valid: single word, no punc, etc
@@ -561,7 +577,7 @@ class HumbleBundle(httpbot.HttpBot):
             uninstaller = osp.join(osp.expanduser("~"), '.local', 'opt',
                                   game.get('dirname', basename), "uninstall")
             if not osp.isfile(uninstaller):
-                hookdir = osp.join(mydir, "hooks", name)
+                hookdir = osp.join(self.datadir, "hooks", name)
                 uninstaller = osp.join(hookdir, "%s.uninstall.hook" % name)
                 popenargs['cwd'] = hookdir
             command = "'%s'" % uninstaller
@@ -682,7 +698,6 @@ class HumbleBundle(httpbot.HttpBot):
 
 
 def main(argv=None):
-
     args, parser = parseargs(argv)
     logging.basicConfig(level=getattr(logging, args.loglevel.upper(), None),
                         format='%(asctime)s\t%(levelname)-8s\t%(message)s')
@@ -786,7 +801,10 @@ def main(argv=None):
             parser.print_usage()
 
 
-def read_config(args):
+def read_config(args, appname=None, configdir=None):
+    appname   = appname   or APPNAME
+    configdir = configdir or CONFIGDIR
+
     config = osp.join(configdir, "login.conf")
 
     username = ""
@@ -796,7 +814,7 @@ def read_config(args):
     if keyring:
         log.debug("Reading credentials from keyring")
         try:
-            username, password = (keyring.get_password(myname, '').split('\n') +
+            username, password = (keyring.get_password(appname, '').split('\n') +
                                   ['\n'])[:2]
         except AttributeError as e:
             log.warn("Credentials not found in keyring. First time usage?")
@@ -817,7 +835,7 @@ def read_config(args):
     if args.username or args.password:
         log.info("Saving credentials")
         if keyring:
-            keyring.set_password(myname, '',
+            keyring.set_password(appname, '',
                                  '%s\n%s' % (args.username or username,
                                              args.password or password,))
         else:
@@ -927,9 +945,10 @@ def parseargs(argv=None):
 
 
 if __name__ == '__main__':
-    myname = osp.basename(osp.splitext(__file__)[0])
-    configdir = xdg.save_config_path(myname)
-    cachedir = osp.join(xdg.xdg_cache_home, myname)
+    APPNAME   = osp.basename(osp.splitext(__file__)[0])
+    CONFIGDIR = xdg.save_config_path(APPNAME)  # creates the dir
+    CACHEDIR  = osp.join(xdg.xdg_cache_home, APPNAME)
+    # No changes in DATADIR
 
     try:
         sys.exit(main())
