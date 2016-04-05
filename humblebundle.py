@@ -21,6 +21,7 @@
 # TODO:
 # - INI-format config file for non-auth settings like arch-pref, debug level
 # - Log to file, with debug or info level
+# - Add --clear-cache, --clear-credentials, --clear-data, and --purge
 
 HB_USERNAME = ""
 HB_PASSWORD = ""
