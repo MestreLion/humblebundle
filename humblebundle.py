@@ -943,9 +943,7 @@ def parseargs(argv=None):
     return args, parser
 
 
-
-
-if __name__ == '__main__':
+def cli():
     APPNAME   = osp.basename(osp.splitext(__file__)[0])
     CONFIGDIR = xdg.save_config_path(APPNAME)  # creates the dir
     CACHEDIR  = osp.join(xdg.xdg_cache_home, APPNAME)
@@ -962,3 +960,7 @@ if __name__ == '__main__':
     except Exception as e:
         log.critical(e, exc_info=True)
         sys.exit(1)
+
+
+if __name__ == '__main__':
+    cli()
