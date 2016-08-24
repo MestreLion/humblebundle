@@ -468,7 +468,8 @@ class HumbleBundle(httpbot.HttpBot):
             for spec in specs:
                 specs[spec] = game.get(spec, specs[spec])
             specs['dtype'] = specs.pop('download', None)
-            return self.download(name, path=self.cachedir, **specs)
+            # make sure cachedir ends with a trailing slash, see HttpBot.download()
+            return self.download(name, path=osp.join(self.cachedir, ''), **specs)
 
         if not method:
             raise HumbleBundleError("No install data for '%s', please check '%s'"

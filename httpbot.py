@@ -85,9 +85,11 @@ class HttpBot(object):
         # Handle dir
         dirname, _ = os.path.split(path)
         try:
+            log.debug("Creating destination directory %s", dirname)
             os.makedirs(dirname)
         except OSError as e:
-            if e.errno != 17:  # File exists
+            # Ignore if destination directory exists, raise otherwise
+            if not (e.errno == 17 and os.path.isdir(dirname)):
                 raise
 
         size = expected_size or int(download.info().get('Content-Length', 0))
