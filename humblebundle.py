@@ -41,6 +41,7 @@ import Queue
 import threading
 import subprocess
 import shlex
+import shutil
 
 try:
     # Debian/Ubuntu: python-keyring
@@ -444,7 +445,7 @@ class HumbleBundle(httpbot.HttpBot):
         # References:
         # Steam: https://developer.valvesoftware.com/wiki/Steam_browser_protocol
         # USC:   https://software-center.ubuntu.com/subscriptions/
-        # Mojo: scripts/mojosetup_mainline.lua
+        # Mojo:  scripts/mojosetup_mainline.lua
 
         game = self.get_game(name)
         method = method or game.get('install', "").lower()
@@ -552,6 +553,7 @@ class HumbleBundle(httpbot.HttpBot):
         game = self.get_game(name)
         method = method or game.get('install', "").lower()
         command = ""
+        installdir = ""
         popenargs = {}
 
         if not method:
@@ -572,11 +574,11 @@ class HumbleBundle(httpbot.HttpBot):
 
         elif method == "mojo":
             mojoname = game.get('mojoname', name.split("_", 1)[0].title())
-            uninstaller = osp.join(osp.expanduser("~/.local/opt"),
-                                   mojoname,
-                                   "uninstall-%s.sh" % mojoname)
+            installdir = osp.join(osp.expanduser("~"), '.local', 'opt', mojoname)
+            uninstaller = osp.join(installdir, "uninstall-%s.sh" % mojoname)
             command = "'%s' --noprompt" % uninstaller
-
+            # "Disable" install dir removal as user can cancel uninstall in GUI
+            installdir = ""
 
         elif method == "custom":
             basename = game.get('basename', name.split("_", 1)[0])
@@ -597,6 +599,9 @@ class HumbleBundle(httpbot.HttpBot):
         try:
             log.debug("Executing: %s", command)
             subprocess.check_call(shlex.split(command), **popenargs)
+            if installdir:
+                log.debug("Removing '%s'", installdir)
+                shutil.rmtree(installdir, ignore_errors=True)
         except (subprocess.CalledProcessError, OSError) as e:
             if getattr(e, 'errno', 0) == 2:  # OSError, No such file or directory
                 log.error("Error uninstalling '%s': %s: %s",
