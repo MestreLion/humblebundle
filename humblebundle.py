@@ -279,6 +279,12 @@ class HumbleBundle(httpbot.HttpBot):
         if not d:
             return
 
+        # MD5 sum matches direct download files, not .torrent ones.
+        if bittorrent:
+            md5 = None
+        else:
+            md5 = d.get('md5', '').lower() or None
+
         url = d['url'].get('bittorrent' if bittorrent else 'web','')
         if not url:
             log.error("Selected download has no URL")
@@ -314,8 +320,7 @@ class HumbleBundle(httpbot.HttpBot):
         print "Downloading '%s' [%s]\t%s" % (
             game['human_name'], game['machine_name'], self._download_info(d))
         try:
-            return super(HumbleBundle, self).download(url, path,
-                                                      d.get('md5', '').lower())
+            return super(HumbleBundle, self).download(url, path, md5)
         except httpbot.urllib2.HTTPError as e:
             # Unauthorized (most likely outdated download URL) or something else?
             if not e.code == 403:
