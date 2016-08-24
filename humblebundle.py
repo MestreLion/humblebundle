@@ -33,7 +33,6 @@ import re
 import json
 import logging
 import argparse
-import xdg.BaseDirectory as xdg
 import time
 import cookielib
 from urlparse import urljoin, urlsplit, parse_qs
@@ -43,6 +42,8 @@ import subprocess
 import shlex
 import shutil
 
+# Debian/Ubuntu: python-xdg
+import xdg.BaseDirectory as xdg
 try:
     # Debian/Ubuntu: python-keyring
     import keyring

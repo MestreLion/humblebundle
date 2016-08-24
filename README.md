@@ -25,6 +25,7 @@ Dependencies
 - [lxml](http://lxml.de)
 - [Progressbar](https://code.google.com/p/python-progressbar)
 - [Python Keyring Lib](https://bitbucket.org/kang/python-keyring-lib)
+- [PyXDG](https://freedesktop.org/wiki/Software/pyxdg/)
 
 The above can be installed in any modern Debian-like distros (like Ubuntu/Mint) with:
 
