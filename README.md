@@ -28,7 +28,7 @@ Dependencies
 
 The above can be installed in any modern Debian-like distros (like Ubuntu/Mint) with:
 
-	sudo apt-get install python-{lxml,progressbar,keyring}
+	sudo apt-get install python-{lxml,progressbar,keyring,xdg}
 
 
 Install
