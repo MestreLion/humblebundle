@@ -322,8 +322,8 @@ class HumbleBundle(httpbot.HttpBot):
         try:
             return super(HumbleBundle, self).download(url, path, md5)
         except httpbot.urllib2.HTTPError as e:
-            # Unauthorized (most likely outdated download URL) or something else?
-            if not e.code == 403:
+            # Handle Unauthorized/Not Found (most likely outdated download URL)
+            if not e.code in (403, 404):
                 raise
             raise HumbleBundleError(
                 "Download error: %d %s. URL may be outdated, try --update." %
