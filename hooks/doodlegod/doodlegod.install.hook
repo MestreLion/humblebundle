@@ -47,7 +47,7 @@ then
 		debarch=i386
 	fi
 	url=http://security.ubuntu.com/ubuntu/pool/main
-	libs=(/e/eglibc/libc6_2.19-0ubuntu6.6_"$debarch".deb)
+	libs=(/e/eglibc/libc6_2.19-0ubuntu6.9_"$debarch".deb)
 	mkdir -p "$fakeroot"
 	for lib in "${libs[@]}"; do
 		wget -P "$fakeroot" "$url"/"$lib"
