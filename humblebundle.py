@@ -832,7 +832,17 @@ def read_config(args, appname=None, configdir=None):
                 ['\n']
             )[:2]
         except AttributeError as e:
-            log.warn("Credentials not found in keyring. First time usage?")
+            # Check for old keyring format and migrate before throwing warning
+            data = keyring.get_password(appname, '')
+            if data:
+                log.info("Migrating credentials to new keyring format")
+                keyring.set_password(appname, appname, data)
+                try:
+                    keyring.delete_password(appname, '')
+                except AttributeError as e:
+                    log.warn("Error deleting old keyring. Outdated library? (%s)", e)
+            else:
+                log.warn("Credentials not found in keyring. First time usage?")
         except IOError as e:  # keyring sometimes raises this
             log.error(e)
     else:
