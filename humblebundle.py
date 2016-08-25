@@ -827,8 +827,10 @@ def read_config(args, appname=None, configdir=None):
     if keyring:
         log.debug("Reading credentials from keyring")
         try:
-            username, password = (keyring.get_password(appname, '').split('\n') +
-                                  ['\n'])[:2]
+            username, password = (
+                keyring.get_password(appname, appname).split('\n') +
+                ['\n']
+            )[:2]
         except AttributeError as e:
             log.warn("Credentials not found in keyring. First time usage?")
         except IOError as e:  # keyring sometimes raises this
@@ -848,7 +850,7 @@ def read_config(args, appname=None, configdir=None):
     if args.username or args.password:
         log.info("Saving credentials")
         if keyring:
-            keyring.set_password(appname, '',
+            keyring.set_password(appname, appname,
                                  '%s\n%s' % (args.username or username,
                                              args.password or password,))
         else:
