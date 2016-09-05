@@ -944,6 +944,8 @@ def parseargs(argv=None):
 
 
 def cli():
+    global APPNAME, CONFIGDIR, CACHEDIR
+
     APPNAME   = osp.basename(osp.splitext(__file__)[0])
     CONFIGDIR = xdg.save_config_path(APPNAME)  # creates the dir
     CACHEDIR  = osp.join(xdg.xdg_cache_home, APPNAME)
