@@ -351,6 +351,8 @@ class HumbleBundle(httpbot.HttpBot):
         for plat in game.get('downloads', []):
             if plat.get('platform', '') == platform:
                 for download in plat.get('download_struct', []):
+                    if download in candidates:
+                        continue
                     if not download.get('url', ''):
                         continue
                     if (serverfile and
