@@ -708,6 +708,14 @@ class HumbleBundle(httpbot.HttpBot):
         return self.get(url, postdata)
 
 
+def filterGames(games, platform):
+    retval = []
+    for game in games:
+        for download in games[game]['downloads']:
+            if download['platform'] == platform:
+                retval.append(game)
+                break
+    return sorted(retval)
 
 
 def main(argv=None):
@@ -728,10 +736,15 @@ def main(argv=None):
         hb.update()
 
     if args.list is not None:
-        if args.list is True:
-            games = hb.games.keys()
+        if args.platform is not None:
+            keys = filterGames(hb.games,args.platform)
         else:
-            games = (_ for _ in hb.games.keys() if re.search(args.list, _))
+            keys = hb.games.keys()
+
+        if args.list is True:
+            games = keys
+        else:
+            games = (_ for _ in keys if re.search(args.list, _))
         for game in sorted(games):
             print "%s" % game
 
