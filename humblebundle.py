@@ -941,7 +941,7 @@ def parseargs(argv=None):
     group.add_argument('-p', '--platform', dest='platform',
                         default=default,
                         choices=['windows', 'mac', 'linux', 'android', 'audio',
-                                 'ebook', 'comedy'],
+                                 'ebook', 'comedy', 'video'],
                         help="Download platform. Default is '%s'" % default)
     group.add_argument('-F', '--server-file', dest='serverfile', metavar="FILE",
                         help="Basename of the server file to download."
