@@ -62,6 +62,8 @@ APPNAME   = __name__
 DATADIR   = osp.dirname(osp.realpath(__file__))
 CONFIGDIR = osp.join(xdg.xdg_config_home, APPNAME)
 CACHEDIR  = osp.join(xdg.xdg_cache_home, APPNAME)
+AUTHFILE  = osp.join(CONFIGDIR, "login.auth")
+COOKIEJAR = osp.join(CONFIGDIR, "cookies.txt")
 
 
 
@@ -76,7 +78,7 @@ class HumbleBundle(httpbot.HttpBot):
     auth_urls = ("/login", "/user/humbleguard")
 
     def __init__(self, username=None, password=None, auth=None, code=None,
-                 datadir=None, configdir=None, cachedir=None,
+                 datadir=None, configdir=None, cachedir=None, cookiejar=None,
                  debug=False):
         self.username = username
         self.password = password
@@ -89,9 +91,8 @@ class HumbleBundle(httpbot.HttpBot):
             # Create the config dir as xdg would. Let exceptions bubble up
             os.makedirs(self.configdir, 0700)
 
-        self.cookiejar = cookielib.MozillaCookieJar(
-                            filename=osp.join(self.configdir,
-                                              "cookies.txt"))
+        self.cookiejar = cookielib.MozillaCookieJar(filename=(cookiejar or
+                                                              COOKIEJAR))
         try:
             self.cookiejar.load()
         except (IOError, cookielib.LoadError) as e:
@@ -727,6 +728,9 @@ def main(argv=None):
     if args.update:
         hb.update()
 
+    if args.clear:
+        clear_auth()
+
     if args.list is not None:
         if args.list is True:
             games = hb.games.keys()
@@ -810,15 +814,43 @@ def main(argv=None):
         hb.uninstall(args.uninstall, args.method)
 
     else:
-        if not args.update:
+        if not (args.update or args.clear):
             parser.print_usage()
 
 
-def read_config(args, appname=None, configdir=None):
-    appname   = appname   or APPNAME
-    configdir = configdir or CONFIGDIR
+def clear_auth(appname=None, authfile=None, cookiejar=None):
+    '''Clear all authentication data and delete related files'''
 
-    config = osp.join(configdir, "login.conf")
+    appname   = appname   or APPNAME
+    authfile  = authfile  or AUTHFILE
+    cookiejar = cookiejar or COOKIEJAR
+
+    authfiles = [cookiejar]
+
+    log.info("Clearing all authentication data")
+
+    if keyring:
+        try:
+            log.debug("Removing credentials from keyring")
+            keyring.delete_password(appname, appname)
+        except AttributeError as e:
+            log.warn("Error removing keyring credentials. Outdated library? (%s)", e)
+    else:
+        authfiles.append(authfile)
+
+    for auth in authfiles:
+        try:
+            log.debug("Deleting '%s'", auth)
+            os.remove(auth)
+        except OSError as e:
+            log.debug(e)
+
+    log.info("Finished clearing authentication")
+
+
+def read_config(args, appname=None, authfile=None):
+    appname   = appname   or APPNAME
+    authfile  = authfile  or AUTHFILE
 
     username = ""
     password = ""
@@ -846,9 +878,9 @@ def read_config(args, appname=None, configdir=None):
         except IOError as e:  # keyring sometimes raises this
             log.error(e)
     else:
-        log.debug("Reading credentials from '%s'" % config)
+        log.debug("Reading credentials from '%s'" % authfile)
         try:
-            with open(config, 'r') as fd:
+            with open(authfile, 'r') as fd:
                 username, password = (fd.read().splitlines() + ['\n'])[:2]
         except IOError as e:
             if e.errno == 2:  # No such file or directory
@@ -865,10 +897,10 @@ def read_config(args, appname=None, configdir=None):
                                              args.password or password,))
         else:
             try:
-                with open(config, 'w') as fd:
+                with open(authfile, 'w') as fd:
                     fd.write("%s\n%s\n" % (args.username or username,
                                            args.password or password,))
-                os.chmod(config, 0600)
+                os.chmod(authfile, 0600)
             except IOError as e:
                 log.error(e)
 
@@ -901,6 +933,9 @@ def parseargs(argv=None):
                         help="Account _simpleauth_sess cookie value")
     group.add_argument('-c', '--code',
                        help="Browser verification code sent by email")
+    group.add_argument('-C', '--clear',
+                       default=False, action="store_true",
+                       help="Clear all authentication data, deleting related files")
 
     group = parser.add_argument_group("Commands")
     group.add_argument('-l', '--list', dest='list',
@@ -968,11 +1003,13 @@ def parseargs(argv=None):
 
 
 def cli():
-    global APPNAME, CONFIGDIR, CACHEDIR
+    global APPNAME, CONFIGDIR, CACHEDIR, AUTHFILE, COOKIEJAR
 
     APPNAME   = osp.basename(osp.splitext(__file__)[0])
     CONFIGDIR = xdg.save_config_path(APPNAME)  # creates the dir
     CACHEDIR  = osp.join(xdg.xdg_cache_home, APPNAME)
+    AUTHFILE  = osp.join(CONFIGDIR, "login.conf")
+    COOKIEJAR = osp.join(CONFIGDIR, "cookies.txt")
     # No changes in DATADIR
 
     try:
