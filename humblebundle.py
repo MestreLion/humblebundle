@@ -695,8 +695,9 @@ class HumbleBundle(httpbot.HttpBot):
             save_cookies(res, force=True)
 
         except httpbot.urllib2.HTTPError as e:
-            # 'Bad Request' or 'Forbidden' are expected for wrong passwords
-            if e.code in [400, 403]:
+            # 'Bad Request', 'Unauthorized' or 'Forbidden' are expected
+            # in case of wrong passwords
+            if e.code in [400, 401, 403]:
                 raise HumbleBundleError(
                     "Could not log in. Either username/password are"
                     " not correct, or a ReCaptcha validation is required."
