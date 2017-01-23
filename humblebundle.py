@@ -712,15 +712,6 @@ class HumbleBundle(httpbot.HttpBot):
         return self.get(url, postdata)
 
 
-def filterGames(games, platform):
-    retval = []
-    for game in games:
-        for download in games[game]['downloads']:
-            if download['platform'] == platform:
-                retval.append(game)
-                break
-    return sorted(retval)
-
 
 def main(argv=None):
     args, parser = parseargs(argv)
@@ -743,17 +734,16 @@ def main(argv=None):
         clear_auth()
 
     if args.list is not None:
-        if args.platform is not None:
-            keys = filterGames(hb.games,args.platform)
-        else:
-            keys = hb.games.keys()
+        games = hb.games
+        if isinstance(args.list, str):
+            games = {k: v for k, v in hb.games.items() if re.search(args.list, k)}
 
-        if args.list is True:
-            games = keys
-        else:
-            games = (_ for _ in keys if re.search(args.list, _))
-        for game in sorted(games):
-            print "%s" % game
+        if args.platform is not None:
+            hasPlatform = lambda v, p: any(_ for _ in v['downloads'] if _['platform'] == p)
+            games = {k: v for k, v in games.items() if hasPlatform(v, args.platform)}
+
+        for key in sorted(games.keys()):
+            print "%s" % key
 
     elif args.show:
         def print_key(key, alias=None, obj=None):
