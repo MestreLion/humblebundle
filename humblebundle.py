@@ -948,7 +948,8 @@ def parseargs(argv=None):
                         const=True, nargs='?', metavar="REGEX",
                         help="List all available Games (Products),"
                             " including Soundtracks and eBooks,"
-                            " optionally filtered by REGEX")
+                            " optionally filtered by REGEX. If --platform is given,"
+                            " filter by platform also.")
     group.add_argument('-L', '--list-bundles', dest='list_bundles',
                         default=False, action="store_true",
                         help="List all available Bundles (Purchases), "
