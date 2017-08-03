@@ -66,8 +66,6 @@ AUTHFILE  = osp.join(CONFIGDIR, "login.auth")
 COOKIEJAR = osp.join(CONFIGDIR, "cookies.txt")
 
 
-
-
 class HumbleBundleError(Exception):
     pass
 
@@ -338,8 +336,9 @@ class HumbleBundle(httpbot.HttpBot):
 
     def _download_info(self, d):
         a = "\t(%s-bit)" % d['arch'] if d.get('arch', None) else ""
-        return "'%s'%s\t%s\t%s" % (d['name'], a, d['human_size'],
-                                   self._download_basename(d))
+        return "\t\t%-20s%s\t%8s\t%s" % (d['name'], a, d['human_size'],
+                                         self._download_basename(d))
+
 
     def _choose_download(self, name, dtype=None, arch=None, platform=None,
                          serverfile=None, type_pref=None, arch_pref=None):
@@ -439,7 +438,7 @@ class HumbleBundle(httpbot.HttpBot):
         log.error("Too many download candidates for '%s' [%s]."
                   " Improve criteria to narrow it down.%s",
                   game['human_name'], game['machine_name'],
-                  "".join(["\n\t%s" % self._download_info(x)
+                  "".join(["\n%s" % self._download_info(x)
                            for x in finalists or candidates]))
         #log.debug("\n%s", json.dumps(finalists or candidates, indent=2))
         return
@@ -772,9 +771,7 @@ def main(argv=None):
             for d in download.get('download_struct', []):
                 if 'url' not in d:
                     continue
-                a = " %s-bit" % d['arch'] if d.get('arch', None) else ""
-                print "\t\t%-20s%s\t%8s\t%s" % (d['name'], a, d['human_size'],
-                                                hb._download_basename(d))
+                print hb._download_info(d)
 
     elif args.show_bundle:
         def print_key(key, alias=None, obj=None):
