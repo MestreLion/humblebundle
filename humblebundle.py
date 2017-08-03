@@ -712,7 +712,6 @@ class HumbleBundle(httpbot.HttpBot):
 
 
 
-
 def main(argv=None):
     args, parser = parseargs(argv)
     logging.basicConfig(level=getattr(logging, args.loglevel.upper(), None),
@@ -734,12 +733,16 @@ def main(argv=None):
         clear_auth()
 
     if args.list is not None:
-        if args.list is True:
-            games = hb.games.keys()
-        else:
-            games = (_ for _ in hb.games.keys() if re.search(args.list, _))
-        for game in sorted(games):
-            print "%s" % game
+        games = hb.games
+        if isinstance(args.list, str):
+            games = {k: v for k, v in hb.games.items() if re.search(args.list, k)}
+
+        if args.platform is not None:
+            hasPlatform = lambda v, p: any(_ for _ in v['downloads'] if _['platform'] == p)
+            games = {k: v for k, v in games.items() if hasPlatform(v, args.platform)}
+
+        for key in sorted(games.keys()):
+            print "%s" % key
 
     elif args.show:
         def print_key(key, alias=None, obj=None):
@@ -942,7 +945,8 @@ def parseargs(argv=None):
                         const=True, nargs='?', metavar="REGEX",
                         help="List all available Games (Products),"
                             " including Soundtracks and eBooks,"
-                            " optionally filtered by REGEX")
+                            " optionally filtered by REGEX. If --platform is given,"
+                            " filter by platform also.")
     group.add_argument('-L', '--list-bundles', dest='list_bundles',
                         default=False, action="store_true",
                         help="List all available Bundles (Purchases), "
