@@ -126,9 +126,16 @@ class HumbleBundle(httpbot.HttpBot):
             log.info("Validating browser code at '%s/user/humbleguard'",
                      self.url)
             try:
+                token = None
+                for cookie in self.cookiejar:
+                    if cookie.name == 'csrf_cookie':
+                        token = cookie.value
+                if token is None:
+                    raise HumbleBundleError("No CSRF token. Execute one time without --code argument.")
                 self.get("/user/humbleguard",
                                {'goto': "/home",
                                 'qs'  : "",
+                                '_le_csrf_token'  : token,
                                 'code': code.upper()})
             except httpbot.urllib2.HTTPError as e:
                 raise HumbleBundleError("Incorrect browser verification code")
