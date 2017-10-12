@@ -126,12 +126,14 @@ class HumbleBundle(httpbot.HttpBot):
             log.info("Validating browser code at '%s/user/humbleguard'",
                      self.url)
             try:
+                # Load coockies in unlikely case that cookies.txt was not present
+                self.get("/")
                 token = None
                 for cookie in self.cookiejar:
                     if cookie.name == 'csrf_cookie':
                         token = cookie.value
                 if token is None:
-                    raise HumbleBundleError("No CSRF token. Execute one time without --code argument.")
+                    raise HumbleBundleError("Missing CSRF token")
                 self.get("/user/humbleguard",
                                {'goto': "/home",
                                 'qs'  : "",
