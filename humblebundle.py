@@ -58,12 +58,6 @@ except ImportError:
 
 import httpbot
 
-if hasattr(httpbot, 'urllib2'):
-    HTTPError = httpbot.urllib2.HTTPError
-else:
-    HTTPError = httpbot.urllib.request.HTTPError
-
-
 log = logging.getLogger(__name__)
 
 
@@ -150,7 +144,7 @@ class HumbleBundle(httpbot.HttpBot):
                                 'qs'  : "",
                                 '_le_csrf_token'  : token,
                                 'code': code.upper()})
-            except HTTPError as e:
+            except httpbot.urllib2.HTTPError as e:
                 raise HumbleBundleError("Incorrect browser verification code")
 
         # "purchases" in the website. May be non-bundle like Store Purchases
@@ -347,7 +341,7 @@ class HumbleBundle(httpbot.HttpBot):
             game['human_name'], game['machine_name'], self._download_info(d)))
         try:
             return super(HumbleBundle, self).download(url, path, md5)
-        except HTTPError as e:
+        except httpbot.urllib2.HTTPError as e:
             # Handle Unauthorized/Not Found (most likely outdated download URL)
             if not e.code in (403, 404):
                 raise
@@ -682,7 +676,7 @@ class HumbleBundle(httpbot.HttpBot):
             if (current_url == requested_url or
                 current_url not in self.auth_urls):
                 return res
-        except HTTPError as e:
+        except httpbot.urllib2.HTTPError as e:
             # Unauthorized (requires login) or something else?
             if not e.code == 401:
                 raise
@@ -718,7 +712,7 @@ class HumbleBundle(httpbot.HttpBot):
                                                  '_le_csrf_token': token})
             save_cookies(res, force=True)
 
-        except HTTPError as e:
+        except httpbot.urllib2.HTTPError as e:
             # 'Bad Request', 'Unauthorized' or 'Forbidden' are expected
             # in case of wrong passwords
             if e.code in [400, 401, 403]:
