@@ -19,12 +19,17 @@
 # urllib2 wrapper for a simpler, higher-level API
 
 import os
+import sys
 import urllib
-import urllib2
-import urlparse
 import logging
-from urlparse import urlsplit
 import hashlib
+
+if sys.version_info.major < 3:
+    import urllib2
+    import urlparse
+else:
+    urllib2 = urllib.request
+    urlparse = urllib.parse
 
 # Debian/Ubuntu: python-lxml
 from lxml import html
@@ -78,7 +83,7 @@ class HttpBot(object):
         if os.path.isdir(path) or not os.path.basename(path):
             #TODO: Parse Content-Disposition header for filename
             basename = urllib.unquote(os.path.basename
-                                      (urlsplit(download.geturl()).path))
+                                     (urlparse.urlsplit(download.geturl()).path))
             path = os.path.join(path, basename)
         log.info("Downloading to %s", path)
 
