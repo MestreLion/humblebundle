@@ -34,13 +34,19 @@ import json
 import logging
 import argparse
 import time
-import cookielib
-from urlparse import urljoin, urlsplit, parse_qs
-import Queue
 import threading
 import subprocess
 import shlex
 import shutil
+
+if sys.version_info.major < 3:
+    import cookielib
+    from urlparse import urljoin, urlsplit, parse_qs
+    import Queue
+else:
+    import http.cookiejar as cookielib
+    from urllib.parse import urljoin, urlsplit, parse_qs
+    import queue as Queue
 
 # Debian/Ubuntu: python-xdg
 import xdg.BaseDirectory as xdg
@@ -51,7 +57,6 @@ except ImportError:
     keyring = None
 
 import httpbot
-
 
 log = logging.getLogger(__name__)
 
@@ -87,7 +92,7 @@ class HumbleBundle(httpbot.HttpBot):
 
         if not os.path.isdir(self.configdir):
             # Create the config dir as xdg would. Let exceptions bubble up
-            os.makedirs(self.configdir, 0700)
+            os.makedirs(self.configdir, 0o700)
 
         self.cookiejar = cookielib.MozillaCookieJar(filename=(cookiejar or
                                                               COOKIEJAR))
@@ -192,7 +197,8 @@ class HumbleBundle(httpbot.HttpBot):
         # Get the keys
         log.info("Retrieving keys from '%s/home/keys'", self.url)
         match = re.search(r'^.*gamekeys\s*=\s*(\[.*\])',
-                          self.get('/home/keys').read(), re.MULTILINE)
+                          self.get('/home/keys').read().decode('utf-8'),
+                          re.MULTILINE)
         if not match:
             raise HumbleBundleError("GameKeys list not found")
 
@@ -204,7 +210,7 @@ class HumbleBundle(httpbot.HttpBot):
             t.daemon = True
             t.start()
 
-        for _ in xrange(len(keys)):
+        for _ in range(len(keys)):
             bundle, games = queue.get()
             self.bundles.update(bundle)
             self.games.update(games)
@@ -223,7 +229,7 @@ class HumbleBundle(httpbot.HttpBot):
                 with open(path, 'w') as f:
                     json.dump(getattr(self, obj), f,
                               indent=2, separators=(',', ': '), sort_keys=True)
-                os.chmod(path, 0600)
+                os.chmod(path, 0o600)
             except IOError as e:
                 log.error("Error saving cache data: %s", e)
 
@@ -255,8 +261,12 @@ class HumbleBundle(httpbot.HttpBot):
         bundle.pop('subscriptions', None)
 
         # Move 'products' sub-dict to root
-        for k, v in bundle['product'].iteritems():
-            bundle[k] = v
+        if hasattr(bundle['product'], 'iteritems'):
+          for k, v in bundle['product'].iteritems():
+              bundle[k] = v
+        else:
+          for k, v in bundle['product'].items():
+              bundle[k] = v
         del bundle['product']
 
         # Sort games list
@@ -327,8 +337,8 @@ class HumbleBundle(httpbot.HttpBot):
                                  serverfile=serverfile,
                                  retry=False)
 
-        print "Downloading '%s' [%s]\t%s" % (
-            game['human_name'], game['machine_name'], self._download_info(d))
+        print("Downloading '%s' [%s]\t%s" % (
+            game['human_name'], game['machine_name'], self._download_info(d)))
         try:
             return super(HumbleBundle, self).download(url, path, md5)
         except httpbot.urllib2.HTTPError as e:
@@ -647,11 +657,11 @@ class HumbleBundle(httpbot.HttpBot):
             return urlsplit(urljoin('/', url)).path.lower()
 
         def save_cookies(res, force=False):
-            if force or res.info().has_key('Set-Cookie'):
+            if force or 'Set-Cookie' in res.info():
                 log.debug("Saving cookies to '%s'", self.cookiejar.filename)
                 try:
                     self.cookiejar.save()
-                    os.chmod(self.cookiejar.filename, 0600)
+                    os.chmod(self.cookiejar.filename, 0o600)
                 except IOError as e:
                     log.error("Error saving cookies: %s", e)
 
@@ -751,17 +761,17 @@ def main(argv=None):
             games = {k: v for k, v in games.items() if hasPlatform(v, args.platform)}
 
         for key in sorted(games.keys()):
-            print "%s" % key
+            print("%s" % key)
 
     elif args.show:
         def print_key(key, alias=None, obj=None):
-            print "%-10s: %s" % (alias or key,
-                                 getattr(obj or game, 'get')(key.lower(), ''))
+            print("%-10s: %s" % (alias or key,
+                                 getattr(obj or game, 'get')(key.lower(), '')))
 
         game = hb.get_game(args.show)
         if args.json:
-            print json.dumps(game, indent=2, separators=(',', ': '),
-                             sort_keys=True)
+            print(json.dumps(game, indent=2, separators=(',', ': '),
+                             sort_keys=True))
             return
         print_key('machine_name', 'Game')
         print_key('human_name', 'Name')
@@ -770,30 +780,30 @@ def main(argv=None):
         print_key('', 'Bundles')
         for bundle in hb.bundles.itervalues():
             if game.get('machine_name', '') in bundle.get('games', []):
-                print "\t%s [%s]" % (bundle['human_name'],
-                                     bundle['machine_name'])
+                print("\t%s [%s]" % (bundle['human_name'],
+                                     bundle['machine_name']))
         print_key('', 'Downloads')
         platform_prev = None
         for download in sorted(game.get('downloads', []),
                                key=lambda k: k['platform']):
             platform = download.get('platform', '')
             if platform_prev != platform:
-                print "\t%s" % platform
+                print("\t%s" % platform)
                 platform_prev = platform
             for d in download.get('download_struct', []):
                 if 'url' not in d:
                     continue
-                print hb._download_info(d)
+                print(hb._download_info(d))
 
     elif args.show_bundle:
         def print_key(key, alias=None, obj=None):
-            print "%-10s: %s" % (alias or key,
-                                 getattr(obj or bundle, 'get')(key.lower(), ''))
+            print("%-10s: %s" % (alias or key,
+                                 getattr(obj or bundle, 'get')(key.lower(), '')))
 
         bundle = hb.get_bundle(args.show_bundle)
         if args.json:
-            print json.dumps(bundle, indent=2, separators=(',', ': '),
-                             sort_keys=True)
+            print(json.dumps(bundle, indent=2, separators=(',', ': '),
+                             sort_keys=True))
             return
         print_key('machine_name', 'Bundle')
         print_key('human_name', 'Name')
@@ -802,7 +812,7 @@ def main(argv=None):
         print_key('', 'Games')
         for name in sorted(bundle['games']):
             game = hb.get_game(name)
-            print "\t%s\t[%s]" % (game['human_name'], game['machine_name'])
+            print("\t%s\t[%s]" % (game['human_name'], game['machine_name']))
 
     elif args.list_bundles:
         for bundle in sorted(hb.bundles.items()):
@@ -912,7 +922,7 @@ def read_config(args, appname=None, authfile=None):
                 with open(authfile, 'w') as fd:
                     fd.write("%s\n%s\n" % (args.username or username,
                                            args.password or password,))
-                os.chmod(authfile, 0600)
+                os.chmod(authfile, 0o600)
             except IOError as e:
                 log.error(e)
 
