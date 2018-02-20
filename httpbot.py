@@ -25,17 +25,16 @@ import logging
 import hashlib
 
 if sys.version_info.major < 3:
-    import urllib2
-    import urlparse
+    import urllib2   # @UnresolvedImport
+    import urlparse  # @UnresolvedImport
 else:
-    urllib2 = urllib.request
-    urlparse = urllib.parse
+    urllib2   = urllib.request          # @UndefinedVariable
+    urlparse  = urllib.parse            # @UndefinedVariable
 
-# Debian/Ubuntu: python-lxml
-from lxml import html
+
+from lxml import html   # Debian/Ubuntu: python-lxml
 try:
-    # Debian/Ubuntu: python-progressbar
-    import progressbar
+    import progressbar  # Debian/Ubuntu: python-progressbar
 except ImportError:
     progressbar = None
 

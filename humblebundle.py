@@ -39,24 +39,25 @@ import subprocess
 import shlex
 import shutil
 
-if sys.version_info.major < 3:
+try:
     import cookielib
     from urlparse import urljoin, urlsplit, parse_qs
     import Queue
-else:
+except ImportError:  # Python 3
     import http.cookiejar as cookielib
     from urllib.parse import urljoin, urlsplit, parse_qs
     import queue as Queue
 
-# Debian/Ubuntu: python-xdg
-import xdg.BaseDirectory as xdg
+
+import xdg.BaseDirectory as xdg  # Debian/Ubuntu: python-xdg
 try:
-    # Debian/Ubuntu: python-keyring
-    import keyring
+    import keyring  # Debian/Ubuntu: python-keyring
 except ImportError:
     keyring = None
 
+
 import httpbot
+
 
 log = logging.getLogger(__name__)
 
