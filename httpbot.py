@@ -27,9 +27,11 @@ import hashlib
 if sys.version_info.major < 3:
     import urllib2   # @UnresolvedImport
     import urlparse  # @UnresolvedImport
+    HTTPError = urllib2.HTTPError
 else:
     urllib2   = urllib.request          # @UndefinedVariable
     urlparse  = urllib.parse            # @UndefinedVariable
+    HTTPError = urllib.error.HTTPError  # @UndefinedVariable
 
 
 from lxml import html   # Debian/Ubuntu: python-lxml
