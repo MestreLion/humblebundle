@@ -262,12 +262,8 @@ class HumbleBundle(httpbot.HttpBot):
         bundle.pop('subscriptions', None)
 
         # Move 'products' sub-dict to root
-        if hasattr(bundle['product'], 'iteritems'):
-          for k, v in bundle['product'].iteritems():
-              bundle[k] = v
-        else:
-          for k, v in bundle['product'].items():
-              bundle[k] = v
+        for k, v in bundle['product'].items():
+            bundle[k] = v
         del bundle['product']
 
         # Sort games list
