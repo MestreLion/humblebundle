@@ -729,6 +729,8 @@ class HumbleBundle(httpbot.HttpBot):
 
 
 def main(argv=None):
+    if argv == None:
+        argv = sys.argv[1:]
     args, parser = parseargs(argv)
     logging.basicConfig(level=getattr(logging, args.loglevel.upper(), None),
                         format='%(asctime)s\t%(levelname)-8s\t%(message)s')
@@ -1016,7 +1018,6 @@ def parseargs(argv=None):
                         choices=['custom', 'deb', 'apt', 'mojo', 'air', 'steam'],
                         help="Use this method instead of the default"
                             " for (un-)installing a game")
-
     args = parser.parse_args(argv)
     args.debug = args.loglevel=='debug'
     return args, parser
