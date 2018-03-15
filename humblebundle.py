@@ -1031,6 +1031,7 @@ def parseargs(argv=None):
                         choices=['custom', 'deb', 'apt', 'mojo', 'air', 'steam'],
                         help="Use this method instead of the default"
                             " for (un-)installing a game")
+
     args = parser.parse_args(argv)
     args.debug = args.loglevel=='debug'
     return args, parser
