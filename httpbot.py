@@ -29,9 +29,10 @@ if sys.version_info.major < 3:
     import urlparse  # @UnresolvedImport
     HTTPError = urllib2.HTTPError
 else:
-    urllib2   = urllib.request          # @UndefinedVariable
-    urlparse  = urllib.parse            # @UndefinedVariable
-    HTTPError = urllib.error.HTTPError  # @UndefinedVariable
+    import urllib.request as urllib2
+    import urllib.parse as urlparse
+    urllib.unquote  = urllib.parse.unquote 
+    HTTPError       = urllib.error.HTTPError
 
 
 from lxml import html   # Debian/Ubuntu: python-lxml
@@ -120,10 +121,10 @@ class HttpBot(object):
         completed = False
         try:
             with open(path, 'wb') as f:
-                for data in iter(lambda: download.read(chunk_size), ''):
+                for data in iter(lambda: download.read(chunk_size), b''):
                     f.write(data)
                     if show:
-                        pbar.update(min([size, pbar.currval + chunk_size]))
+                        pbar.update(min([size, pbar.value + chunk_size]))
                 completed = True
         except KeyboardInterrupt:
             pass
@@ -168,6 +169,6 @@ def filehash(path, hashobj=None, chunk_size=0):
     hashobj = hashobj or hashlib.md5()
     chunk = chunk_size or 32*1024
     with open(path, 'rb') as f:
-        for data in iter(lambda: f.read(chunk), ''):
+        for data in iter(lambda: f.read(chunk), b''):
             hashobj.update(data)
     return hashobj.hexdigest()
