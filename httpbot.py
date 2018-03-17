@@ -131,7 +131,7 @@ class HttpBot(object):
             if show:
                 pbar.finish()
             if not completed:
-                log.warn("Download aborted")
+                log.warning("Download aborted")
                 if not keep_partial:
                     log.debug("Removing partial file")
                     os.remove(path)
@@ -145,7 +145,7 @@ class HttpBot(object):
                 log.debug("Download MD5 match: %s", md5sum)
                 return path
             else:
-                log.warn("Download MD5 does not match - file is likely corrupt.")
+                log.warning("Download MD5 does not match - file is likely corrupt.")
                 log.debug("Expected and downloaded MD5:\n%s\n%s", md5sum, realhash)
 
     def quote(self, text):
