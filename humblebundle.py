@@ -176,7 +176,7 @@ class HumbleBundle(httpbot.HttpBot):
                 games = json.load(fp)
             self.games.update(games)
         except (IOError, ValueError) as e:
-            log.warn("Error merging extras: %s", e)
+            log.warning("Error merging extras: %s", e)
 
         # Merge install instructions
         self.gamedata = osp.join(self.datadir, "gamedata.json")
@@ -187,7 +187,7 @@ class HumbleBundle(httpbot.HttpBot):
             for game in self.games:
                 self.games[game].update(games.get(game, {}))
         except (IOError, ValueError) as e:
-            log.warn("Error merging games install data: %s", e)
+            log.warning("Error merging games install data: %s", e)
 
 
     def update(self):
@@ -853,7 +853,7 @@ def clear_auth(appname=None, authfile=None, cookiejar=None):
             log.debug("Removing credentials from keyring")
             keyring.delete_password(appname, appname)
         except AttributeError as e:
-            log.warn("Error removing keyring credentials. Outdated library? (%s)", e)
+            log.warning("Error removing keyring credentials. Outdated library? (%s)", e)
     else:
         authfiles.append(authfile)
 
@@ -891,9 +891,9 @@ def read_config(args, appname=None, authfile=None):
                 try:
                     keyring.delete_password(appname, '')
                 except AttributeError as e:
-                    log.warn("Error deleting old keyring. Outdated library? (%s)", e)
+                    log.warning("Error deleting old keyring. Outdated library? (%s)", e)
             else:
-                log.warn("Credentials not found in keyring. First time usage?")
+                log.warning("Credentials not found in keyring. First time usage?")
         except IOError as e:  # keyring sometimes raises this
             log.error(e)
     else:
@@ -903,7 +903,7 @@ def read_config(args, appname=None, authfile=None):
                 username, password = (fd.read().splitlines() + ['\n'])[:2]
         except IOError as e:
             if e.errno == 2:  # No such file or directory
-                log.warn("Credentials file not found. First time usage?")
+                log.warning("Credentials file not found. First time usage?")
             else:
                 log.error(e)
 
