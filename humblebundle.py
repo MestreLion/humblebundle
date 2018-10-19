@@ -48,10 +48,14 @@ except ImportError:  # Python 3
     from urllib.parse import urljoin, urlsplit, parse_qs
     import queue as Queue
 
+# Debian/Ubuntu: python[3]-xdg
+# PyPI: pyxdg
+import xdg.BaseDirectory as xdg
 
-import xdg.BaseDirectory as xdg  # Debian/Ubuntu: python-xdg
 try:
-    import keyring  # Debian/Ubuntu: python-keyring
+    # Debian/Ubuntu: python[3]-keyring
+    # PyPI: keyring
+    import keyring
 except ImportError:
     keyring = None
 
