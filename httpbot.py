@@ -31,7 +31,7 @@ if sys.version_info.major < 3:
 else:
     import urllib.request as urllib2
     import urllib.parse as urlparse
-    urllib.unquote  = urlparse.unquote 
+    urllib.unquote  = urlparse.unquote
     HTTPError       = urllib.error.HTTPError
 
 
