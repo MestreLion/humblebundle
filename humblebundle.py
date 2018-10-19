@@ -760,19 +760,7 @@ def main(argv=None):
             games = {k: v for k, v in games.items() if hasPlatform(v, args.platform)}
 
         for key in sorted(games.keys()):
-            print("%s" % key)
-
-    elif args.list_human is not None:
-        games = hb.games
-        if isinstance(args.list, str):
-            games = {k: v for k, v in hb.games.items() if re.search(args.list, k)}
-
-        if args.platform is not None:
-            has_platform = lambda v, p: any(_ for _ in v['downloads'] if _['platform'] == p)
-            games = {k: v for k, v in games.items() if has_platform(v, args.platform)}
-
-        for key in sorted(games.keys()):
-            print('%s' % hb.games[key]['human_name'])
+            print("%s" % (hb.games[key]['human_name'] if args.human else key))
 
     elif args.show:
         def print_key(key, alias=None, obj=None):
@@ -977,7 +965,6 @@ def parseargs(argv=None):
                             " including Soundtracks and eBooks,"
                             " optionally filtered by REGEX. If --platform is given,"
                             " filter by platform also.")
-    group.add_argument('--list-human', dest='list_human', default=False, action='store_true', help='List human names for games')
     group.add_argument('-L', '--list-bundles', dest='list_bundles',
                         default=False, action="store_true",
                         help="List all available Bundles (Purchases), "
@@ -993,6 +980,11 @@ def parseargs(argv=None):
                         help="Install selected game")
     group.add_argument('-I', '--uninstall', dest='uninstall', metavar="GAME",
                         help="Uninstall selected game")
+
+    group = parser.add_argument_group("List Options")
+    group.add_argument('-H', '--human', dest='human',
+                        default=False, action="store_true",
+                        help="Output human-friendly game names in --list/--list-bundles")
 
     group = parser.add_argument_group("Show Options")
     group.add_argument('-j', '--json', dest='json',
