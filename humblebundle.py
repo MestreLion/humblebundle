@@ -815,8 +815,11 @@ def main(argv=None):
 
     elif args.list_bundles:
         for bundle in sorted(hb.bundles.items()):
-            print ("%s\t%s" % (bundle[1]['machine_name'],
-                               bundle[1]['human_name'])).encode('utf-8')
+            if args.human:
+                print(bundle[1]['human_name'])
+            else:
+                print("%s\t%s" % (bundle[1]['machine_name'],
+                                  bundle[1]['human_name']))
 
     elif args.download:
         if not hb.download(name=args.download,
