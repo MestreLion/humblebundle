@@ -201,7 +201,7 @@ class HumbleBundle(httpbot.HttpBot):
 
         # Get the keys
         log.info("Retrieving keys from '%s/home/keys'", self.url)
-        match = re.search(r'^.*gamekeys\s*=\s*(\[.*\])',
+        match = re.search(r'^.*[\'"]?gamekeys[\'"]?\s*[:=]\s*(\[.*\])',
                           self.get('/home/keys').read().decode('utf-8'),
                           re.MULTILINE)
         if not match:
