@@ -1,0 +1,17 @@
+CODE IDEAS:
+	self._data = { keys: [], bundles: {}, games: {} }, @property for self.games, self.bundles
+	update _data as:  for key self_data['games'].update( returned from _load_key() )
+	--machine|-m output json
+	--method|-m, package, mojoname, etc for customizing install
+	user gamedata.json: to customize
+	user gamedata.uninstall.json: save installed game info, prevent future changes to global to affect uninstall
+	def json_save(obj, file, *args, **kwargs): open(file, 'w') as f:, json.dump(obj, f, *args, **kwargs), write(warning header), os.chmod(600)
+	auto-detect pref arch
+	notification bubbles for install and uninstall (controlled by -g/--gui or -G/--no-gui)
+	decent config file for preferences!
+
+
+Content-disposition
+http://stackoverflow.com/questions/8035900
+
+http://fpdownload.macromedia.com/pub/flashplayer/updaters/11/flashplayer_11_sa.i386.tar.gz
