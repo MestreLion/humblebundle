@@ -215,7 +215,7 @@ class HumbleBundle(httpbot.HttpBot):
             t.daemon = True
             t.start()
 
-        for _ in range(len(keys)):
+        for __ in range(len(keys)):
             bundle, games = queue.get()
             self.bundles.update(bundle)
             self.games.update(games)
@@ -760,7 +760,7 @@ def main(argv=None):
             games = {k: v for k, v in hb.games.items() if re.search(args.list, k)}
 
         if args.platform is not None:
-            hasPlatform = lambda v, p: any(_ for _ in v['downloads'] if _['platform'] == p)
+            hasPlatform = lambda v, p: any(__ for __ in v['downloads'] if __['platform'] == p)
             games = {k: v for k, v in games.items() if hasPlatform(v, args.platform)}
 
         for key in sorted(games.keys()):
