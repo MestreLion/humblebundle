@@ -1,0 +1,6 @@
+include hooks/*/*.hook
+include installers/*.install
+include installers/*.uninstall
+include extras.json
+include gamedata.json
+include makeinstall

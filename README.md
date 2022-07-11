@@ -35,28 +35,31 @@ The above can be installed in any modern Debian-like distros (like Ubuntu/Mint) 
 Install
 -------
 
-Just clone the repository and optionally symlink the main script from somewhere in your `$PATH`:
+Clone the repository and install as an editable package:
 
 	cd ~/some/dir
 	git clone https://github.com/MestreLion/humblebundle.git
+	pip install -e humblebundle
 
-	mkdir -p ~/.local/bin
-	ln -s ~/some/dir/humblebundle/humblebundle.py ~/.local/bin/humblebundle
-	echo 'PATH=$HOME/.local/bin:$PATH' >> ~/.profile  # or ~/.bashrc
-
-To use as a python library, also add the repository directory to your `$PYTHONPATH` environment.
-
-(Yes, this project *desperately* needs a `setup.py`!)
-
+This installs both the main script `humblebundle` and the library `humblebundle`.
 
 Uninstall
 ---------
 
-Just delete the directory! And the symlink, if you created it:
+Remove authentication files:
 
+	humblebundle --clear
+
+Uninstall and delete the directory:
+
+	pip uninstall humblebundle-manager
 	rm -rf ~/some/dir/humblebundle
-	rm -f ~/.local/bin/humblebundle
 
+There may be additional files in the config folder, such as `bundles.json` and
+`games.json`, that are downloaded while using the app, as well as downloaded
+files in the cache folder. The default config folder on Unix-like systems is
+`~/.config/humblebundle`, and the default cache folder is
+`~/.cache/humblebundle`
 
 ---
 
@@ -262,14 +265,21 @@ Usage as a library
 ---
 
 
+Building the `humblebundle-manager` package
+-------------------------------------------
+
+Due to an earlier package called `humblebundle`, the package is called `humblebundle-manager`. To build the package:
+
+    pip install build twine
+    python -m build
+    twine check dist/*
+
 Contributing
 ------------
 
 Patches are welcome! Fork, hack, request pull! Here is my current to-do list:
 
 - **Better documentation**: Improve this `README`, document `installers/` usage, custom `hooks/` interface, explain how credentials are used and stored, `gamedata.json` format and usage, config dir structure. And, most important, describe the install mechanics in more detail.
-
-- **Install**: create a decent `setup.py`, possibly uploading to Pypi
 
 - **Classes**: convert the games and bundles dictionaries to classes with attributes and methods. `HumbleBundle.get_game()` would return a `Game` instance, methods `.install()`, `.download()` etc would be there and not on the "main" HumbleBundle class.
 
